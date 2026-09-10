@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "BetterStash",
+  "version": "1.2.0",
+  "description": "Organizes Bitbucket Server pull requests into useful review tiers without API access.",
+  "minimum_chrome_version": "96",
+  "permissions": ["storage", "scripting"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "BetterStash settings",
+    "default_popup": "options.html"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  }
+}

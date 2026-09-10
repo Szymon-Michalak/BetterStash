@@ -1,0 +1,27 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify tag matches manifest version
+        run: |
+          VERSION="$(node -p "require('./manifest.json').version")"
+          test "$GITHUB_REF_NAME" = "v$VERSION"
+      - run: npm test
+      - run: ./scripts/package.sh
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.zip --verify-tag --generate-notes --title "Stash Prettifier $GITHUB_REF_NAME"

@@ -1,0 +1,76 @@
+.wip-sorter-heading {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b778c;
+}
+
+.wip-sorter-count {
+  font-weight: 400;
+  color: #97a0af;
+}
+
+.wip-sorter-block-heading {
+  display: block;
+  margin: 20px 0 6px;
+  padding-top: 12px;
+  border-top: 2px solid #dfe1e6;
+}
+
+tbody.wip-sorter-section tr.wip-sorter-header-row td {
+  padding: 16px 8px 6px;
+  border-top: 2px solid #dfe1e6;
+  border-bottom: none;
+  background: transparent;
+}
+
+/* Tier accents */
+.wip-sorter-heading-blocked, .wip-sorter-blocked .wip-sorter-heading  { color: #de350b; }
+.wip-sorter-heading-approved, .wip-sorter-approved .wip-sorter-heading { color: #00875a; }
+
+.wip-sorter-row-approved,
+.wip-sorter-row-wip {
+  opacity: 0.6;
+}
+
+.wip-sorter-row-approved:hover,
+.wip-sorter-row-wip:hover {
+  opacity: 1;
+}
+
+html.wip-sorter-no-dim .wip-sorter-row-approved,
+html.wip-sorter-no-dim .wip-sorter-row-wip {
+  opacity: 1;
+}
+
+.wip-sorter-team-badge {
+  border-radius: 50%;
+}
+
+.wip-sorter-name-badge {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin: 0 0 -3px 5px;
+  vertical-align: baseline;
+}
+
+
+.wip-sorter-team-dot {
+  background: #1d428a;
+  border: 2px solid #ffc72c;
+  box-sizing: border-box;
+}
+
+/* Team row tint (Warriors blue, subtle) */
+html.wip-sorter-team-tint tr.wip-sorter-team-row > td,
+html.wip-sorter-team-tint li.wip-sorter-team-row,
+html.wip-sorter-team-tint [role='row'].wip-sorter-team-row {
+  background-color: rgba(29, 66, 138, 0.07);
+}
+
+html.wip-sorter-team-tint tr.wip-sorter-team-row:hover > td {
+  background-color: rgba(29, 66, 138, 0.12);
+}
