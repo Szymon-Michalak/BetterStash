@@ -266,8 +266,9 @@ html.wip-sorter-zen .main-panel {
 }
 
 .wip-sorter-zen-toggle-active {
-  background: #0052cc;
+  background: #0747a6;
   opacity: 0.9;
+  box-shadow: 0 4px 14px rgba(7, 71, 166, 0.45);
 }
 
 .wip-sorter-zen-toggle-active:hover {
@@ -312,4 +313,12 @@ html.wip-sorter-zen .main-panel {
 .wip-sorter-zen-toggle:focus-visible::before {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Inline shortcut hint appended to a PR's tab bar links, e.g. "Diff (2)". */
+.wip-sorter-tab-hint {
+  margin-left: 4px;
+  font-size: 0.8em;
+  font-weight: 400;
+  opacity: 0.6;
 }

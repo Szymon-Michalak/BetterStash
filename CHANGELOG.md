@@ -17,9 +17,15 @@ All notable changes are documented here. This project follows [Semantic Versioni
   it scanned all rows for the "team" class to find where to insert, but tiered team rows
   further down the list (e.g. in Approved) now carry that class too, since everything stays in
   one list. It now tracks its own top-of-list position instead of scanning for that class.
+- Changed: refreshed styling to match Bitbucket's blue (`#0747a6`) — the zen mode toggle's
+  active state now uses it, and the Settings page got a full visual refresh (grouped cards,
+  accent-colored section labels/checkboxes, refined inputs and buttons).
 - Fixed: tiering/sorting no longer runs on a single pull request's own page, so it can't
   interfere with the diff/file view.
-- Added: floating prev/next file navigation (with `[` / `]` shortcuts) on the PR Diff tab.
+- Added: floating prev/next file navigation (matching Bitbucket's native `j`/`k` file
+  shortcuts, which already work on their own) on the PR Diff tab; auto-expands any
+  collapsed folder standing in the way of the next/previous file, and tracks the
+  currently-visible file (however you navigate to it) to stay in sync.
 - Added: expand-all/collapse-all buttons for the diff tab's file-tree folders.
 - Added: collapsible dashboard tier sections (Blocked / Approved by me / WIP), with the
   collapsed state remembered between page loads.
@@ -28,6 +34,10 @@ All notable changes are documented here. This project follows [Semantic Versioni
 - Added: dashboard Zen mode — hides the sidebar and centers the main panel in a narrower column
   with generous side padding. Toggle it from Settings or the small floating button on the
   dashboard; the state is remembered between page loads.
+- Added: `Z` keyboard shortcut to toggle Zen mode on the dashboard (also noted in the zen
+  toggle button's tooltip).
+- Added: an inline "1️⃣ 2️⃣ 3️⃣ 4️⃣" keycap hint on the PR page's Overview/Diff/Commits/Builds
+  tabs, pointing out Bitbucket's own `1`–`4` tab-switch shortcut.
 
 ## 1.2.0 - 2026-09-10
 

@@ -497,7 +497,7 @@
     btn.type = "button";
     btn.className = "wip-sorter-zen-toggle";
     btn.textContent = "🧘";
-    setTooltip(btn, "Toggle zen mode");
+    setTooltip(btn, "Toggle zen mode (Z)");
     btn.addEventListener("click", () => setZenMode(!SETTINGS.zenMode));
     document.body.appendChild(btn);
     return btn;
@@ -523,6 +523,16 @@
     zenToggleBtn.setAttribute("aria-pressed", String(!!SETTINGS.zenMode));
   }
 
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "z" && e.key !== "Z") return;
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (!document.querySelector(SIDE_PANEL_SELECTOR)) return; // only meaningful on the dashboard
+    e.preventDefault();
+    setZenMode(!SETTINGS.zenMode);
+  });
+
   // ---- Diff view: prev/next file navigation --------------------------------
   //
   // The PR diff tab renders a file tree (<ol class="files"><li class="file">
@@ -540,14 +550,14 @@
     const prev = document.createElement("button");
     prev.type = "button";
     prev.className = "wip-sorter-filenav-btn";
-    setTooltip(prev, "Previous file ( [ )");
+    setTooltip(prev, "Previous file (k)");
     prev.textContent = "◀";
     const label = document.createElement("span");
     label.className = "wip-sorter-filenav-label";
     const next = document.createElement("button");
     next.type = "button";
     next.className = "wip-sorter-filenav-btn";
-    setTooltip(next, "Next file ( ] )");
+    setTooltip(next, "Next file (j)");
     next.textContent = "▶";
     prev.addEventListener("click", () => stepFile(-1));
     next.addEventListener("click", () => stepFile(1));
@@ -599,11 +609,14 @@
     return depth;
   }
 
-  function setAllDirectories(open, passesLeft = 15) {
+  function setAllDirectories(open, passesLeft = 15, onDone) {
     const btns = [...document.querySelectorAll(DIRECTORY_BUTTON_SELECTOR)].filter(
       (btn) => isDirectoryOpen(btn) !== open
     );
-    if (!btns.length || passesLeft <= 0) return;
+    if (!btns.length || passesLeft <= 0) {
+      if (onDone) onDone();
+      return;
+    }
 
     if (!open) {
       // Collapsing removes a directory's children from the DOM entirely, so
@@ -614,11 +627,12 @@
       // already attached at query time, so one depth-sorted pass is enough.
       btns.sort((a, b) => directoryDepth(b) - directoryDepth(a));
       btns.forEach((btn) => btn.click());
+      if (onDone) onDone();
       return;
     }
 
     btns.forEach((btn) => btn.click());
-    setTimeout(() => setAllDirectories(open, passesLeft - 1), 30);
+    setTimeout(() => setAllDirectories(open, passesLeft - 1, onDone), 30);
   }
 
   function updateFileNavUI() {
@@ -631,19 +645,68 @@
     label.textContent = links.length ? `${index + 1} / ${links.length}${name ? " — " + text(name) : ""}` : "";
   }
 
+  // Synthetic j/k keydown events aren't accepted by Bitbucket's own shortcut
+  // handler (likely requires a trusted/real event), so the floating buttons
+  // step through files themselves. A closed directory removes its files from
+  // the DOM entirely, so folders are expanded first (a no-op if nothing is
+  // collapsed) and we resume from wherever the current file ends up.
   function stepFile(delta) {
     if (!fileNav || !fileNav.links.length) return;
-    fileNav.index = (fileNav.index + delta + fileNav.links.length) % fileNav.links.length;
-    const link = fileNav.links[fileNav.index];
-    link.click();
-    link.scrollIntoView({ block: "nearest" });
-    updateFileNavUI();
+    const currentLink = fileNav.links[fileNav.index];
+    setAllDirectories(true, 15, () => {
+      const links = [...document.querySelectorAll(FILE_LINK_SELECTOR)];
+      if (!links.length) return;
+      let idx = currentLink ? links.indexOf(currentLink) : -1;
+      if (idx === -1) idx = Math.min(fileNav.index, links.length - 1);
+      idx = (idx + delta + links.length) % links.length;
+      fileNav.links = links;
+      fileNav.index = idx;
+      const link = links[idx];
+      link.click();
+      link.scrollIntoView({ block: "nearest" });
+      updateFileNavUI();
+    });
   }
 
   function teardownFileNav() {
     if (!fileNav) return;
+    if (fileNavObserver) fileNavObserver.disconnect();
     fileNav.bar.remove();
     fileNav = null;
+  }
+
+  // Clicks and native j/k presses both eventually scroll to the target
+  // file's diff section, but we can't tell *when* that happens (a synthetic
+  // keydown isn't accepted by Bitbucket's own handler, so we can't hook its
+  // completion). Watching which file section is actually on screen — via
+  // IntersectionObserver — keeps the label/active-file state correct no
+  // matter what triggered the navigation (our buttons, native j/k, or the
+  // user scrolling by hand).
+  let fileNavObserver = null;
+
+  function setupScrollSpy(links) {
+    if (fileNavObserver) fileNavObserver.disconnect();
+    const targets = links.map((l) => {
+      const id = l.getAttribute("href").slice(1);
+      return id ? document.getElementById(id) : null;
+    });
+    if (!targets.some(Boolean)) return;
+
+    fileNavObserver = new IntersectionObserver(
+      (entries) => {
+        if (!fileNav) return;
+        const visible = entries.filter((en) => en.isIntersecting);
+        if (!visible.length) return;
+        visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        const idx = targets.indexOf(visible[0].target);
+        if (idx !== -1 && idx !== fileNav.index) {
+          fileNav.index = idx;
+          updateFileNavUI();
+        }
+      },
+      { rootMargin: "-10% 0px -70% 0px", threshold: 0 }
+    );
+    targets.forEach((t) => t && fileNavObserver.observe(t));
   }
 
   function refreshFileNav() {
@@ -666,17 +729,9 @@
       fileNav.links = links;
       if (fileNav.index >= links.length) fileNav.index = links.length - 1;
     }
+    setupScrollSpy(links);
     updateFileNavUI();
   }
-
-  document.addEventListener("keydown", (e) => {
-    if (!fileNav || !fileNav.links.length) return;
-    const t = e.target;
-    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
-    if (e.altKey || e.ctrlKey || e.metaKey) return;
-    if (e.key === "]") { stepFile(1); e.preventDefault(); }
-    else if (e.key === "[") { stepFile(-1); e.preventDefault(); }
-  });
 
   // ---- Dashboard: whole-card click-through -----------------------------
   //
@@ -708,6 +763,31 @@
     e.preventDefault();
     window.open(href, "_blank");
   });
+
+  // ---- PR page: tab shortcut hints ------------------------------------------
+  //
+  // Bitbucket already lets you press 1/2/3/4 to switch between a pull
+  // request's Overview/Diff/Commits/Builds tabs — we don't implement this,
+  // we just surface it so it's discoverable. Appended as visible inline text
+  // (a CSS tooltip here fights Bitbucket's own hover/active-tab styling).
+
+  const TAB_MENU_LINK_SELECTOR = "ul.tabs-menu > li[data-testid^='tab-'] > a";
+  // Real "keycap" emoji glyphs (digit + U+FE0F U+20E3) — a graphical key
+  // instead of plain "(1)" text, no extra markup/CSS needed.
+  const TAB_HINT_KEYCAPS = ["1\uFE0F\u20E3", "2\uFE0F\u20E3", "3\uFE0F\u20E3", "4\uFE0F\u20E3"];
+
+  function annotateTabShortcuts() {
+    document.querySelectorAll(TAB_MENU_LINK_SELECTOR).forEach((a, i) => {
+      if (i > 8 || a.querySelector(".wip-sorter-tab-hint")) return;
+      const hint = document.createElement("span");
+      hint.className = "wip-sorter-tab-hint";
+      hint.textContent = TAB_HINT_KEYCAPS[i] || `(${i + 1})`;
+      // Append inside the label itself (not as a sibling of it) so it sits
+      // on the same line as the text — these tab links are flex containers,
+      // so a sibling node would land in its own row instead of next to it.
+      (a.querySelector("strong") || a).appendChild(hint);
+    });
+  }
 
   // ---- Core ---------------------------------------------------------------
 
@@ -780,6 +860,7 @@
         sortOnce();
         refreshFileNav();
         applyZenMode();
+        annotateTabShortcuts();
       } catch (e) {
         console.error("[better-stash] error:", e);
       }
