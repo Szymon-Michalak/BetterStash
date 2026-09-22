@@ -30,6 +30,7 @@
     tierWip: true,
     dimRows: true,
     fileNav: true,   // prev/next file navigation on the PR diff tab
+    zenMode: false,  // dashboard: hide sidebar, widen main panel, dim header
     collapsedTiers: {}, // { [tierId]: boolean } — persisted, not exposed in options
   };
   let MY_IDENTITY = [];
@@ -44,6 +45,7 @@
     identity = null; // force re-detect
     document.documentElement.classList.toggle("wip-sorter-no-dim", !SETTINGS.dimRows);
     document.documentElement.classList.toggle("wip-sorter-team-tint", !!SETTINGS.teamTint);
+    applyZenMode();
   }
 
   const SHOW_MORE_PATTERN = /^\s*show more pull requests\s*$/i;
@@ -302,6 +304,19 @@
   }
 
   // ---- Section management -------------------------------------------------
+  //
+  // Bitbucket's dashboard is a React app. Physically moving PR rows into a
+  // brand-new sibling container (a synthetic <tbody>/<ul>) detaches them from
+  // the <tbody>/<ul> React itself renders and tracks. The next time React
+  // reconciles that original container it expects the row to still be a
+  // child there, calls insertBefore, finds it isn't, and throws
+  // "Failed to execute 'insertBefore': ... not a child of this node" —
+  // which Bitbucket's ErrorBoundary catches repeatedly until the page goes
+  // blank ("this page couldn't be displayed"). To stay safe, headings and
+  // rows are always kept as direct children of the SAME original list;
+  // grouping is achieved purely by reordering within that one parent
+  // (list.appendChild / insertAdjacentElement on an existing child is a safe,
+  // React-tolerated reorder — only reparenting to a different element isn't).
 
   function isTierCollapsed(tierId) {
     return !!(SETTINGS.collapsedTiers && SETTINGS.collapsedTiers[tierId]);
@@ -316,14 +331,18 @@
   }
 
   function applyTierCollapsed() {
-    document.querySelectorAll(".wip-sorter-section").forEach((sec) => {
-      if (!sec.__tierId) return;
-      const collapsed = isTierCollapsed(sec.__tierId);
-      sec.classList.toggle("wip-sorter-collapsed", collapsed);
-      if (sec.__toggleEl) {
-        sec.__toggleEl.setAttribute("aria-expanded", String(!collapsed));
-        sec.__toggleEl.setAttribute("aria-label", `${collapsed ? "Expand" : "Collapse"} section`);
+    document.querySelectorAll(".wip-sorter-section-heading").forEach((heading) => {
+      if (!heading.__tierId) return;
+      const collapsed = isTierCollapsed(heading.__tierId);
+      if (heading.__toggleEl) {
+        heading.__toggleEl.setAttribute("aria-expanded", String(!collapsed));
+        heading.__toggleEl.setAttribute("aria-label", `${collapsed ? "Expand" : "Collapse"} section`);
       }
+    });
+    document.querySelectorAll(`[${MARK}]`).forEach((row) => {
+      const tier = row.getAttribute(MARK);
+      if (!TIERS.some((t) => t.id === tier)) return;
+      row.classList.toggle("wip-sorter-row-hidden", isTierCollapsed(tier));
     });
   }
 
@@ -346,99 +365,162 @@
     return chevron;
   }
 
-  function sectionFor(list, tierId) {
-    list.__sections = list.__sections || {};
-    let sec = list.__sections[tierId];
-    if (sec && sec.isConnected) return sec;
+  // Lazily creates (or reuses) the heading element for `tierId`, keeping it
+  // as a direct child of `list` — never a new container. Positions it right
+  // after the previous tier's current tail so tier order stays canonical.
+  function getOrCreateHeading(list, tierId) {
+    list.__headings = list.__headings || {};
+    let heading = list.__headings[tierId];
+    if (heading && heading.isConnected) return heading;
 
     const tier = TIERS.find((t) => t.id === tierId);
     const isTable = list.tagName.toLowerCase() === "tbody";
+    const count = document.createElement("span");
+    count.className = "wip-sorter-count";
 
-    let heading = null;
     let toggleEl;
     if (isTable) {
-      sec = document.createElement("tbody");
-      const hr = document.createElement("tr");
-      hr.className = "wip-sorter-header-row";
+      heading = document.createElement("tr");
+      heading.className = "wip-sorter-header-row";
       const td = document.createElement("td");
       // Deliberately oversized: browsers clamp colspan to the row's real
       // column count, so this always spans full width without needing to
       // (fallibly) count columns ourselves.
       td.colSpan = 1000;
       const headingSpan = document.createElement("span");
-      headingSpan.className = "wip-sorter-heading";
-      const count = document.createElement("span");
-      count.className = "wip-sorter-count";
+      headingSpan.className = `wip-sorter-heading wip-sorter-heading-${tierId}`;
       const chevron = makeToggleable(headingSpan, tierId);
       headingSpan.append(`${tier.label} `, count, chevron);
       td.appendChild(headingSpan);
-      hr.appendChild(td);
-      sec.appendChild(hr);
+      heading.appendChild(td);
       toggleEl = headingSpan;
     } else {
-      heading = document.createElement("div");
+      heading = document.createElement(/^(ul|ol)$/i.test(list.tagName) ? "li" : "div");
       heading.className = `wip-sorter-heading wip-sorter-block-heading wip-sorter-heading-${tierId}`;
-      const count = document.createElement("span");
-      count.className = "wip-sorter-count";
       const chevron = makeToggleable(heading, tierId);
       heading.append(`${tier.label} `, count, chevron);
-      sec = document.createElement(list.tagName);
-      sec.className = list.className;
       toggleEl = heading;
     }
-    sec.classList.add("wip-sorter-section", `wip-sorter-${tierId}`);
-    sec.__heading = heading;
-    sec.__list = list;
-    sec.__tierId = tierId;
-    sec.__toggleEl = toggleEl;
+    heading.classList.add("wip-sorter-section-heading");
+    heading.__tierId = tierId;
+    heading.__toggleEl = toggleEl;
+    heading.__count = count;
 
-    // Insert after the last existing section that precedes this tier.
-    let anchor = list;
+    // Anchor after the last preceding tier's current tail (heading or row),
+    // else just append it at the current end of `list`.
+    list.__tail = list.__tail || {};
+    let anchor = null;
     for (const t of TIERS) {
       if (t.id === tierId) break;
-      const prev = list.__sections[t.id];
-      if (prev && prev.isConnected) anchor = prev;
+      const tail = list.__tail[t.id];
+      if (tail && tail.isConnected) anchor = tail;
     }
-    anchor.insertAdjacentElement("afterend", sec);
-    if (heading) sec.insertAdjacentElement("beforebegin", heading);
+    if (anchor) anchor.insertAdjacentElement("afterend", heading);
+    else list.appendChild(heading);
 
-    list.__sections[tierId] = sec;
-    return sec;
+    list.__headings[tierId] = heading;
+    list.__tail[tierId] = heading;
+    return heading;
+  }
+
+  // Keeps untiered team-member rows as a contiguous block at the very top of
+  // `list`. Uses its own tail pointer (like tier groups do) instead of
+  // scanning list.children for ".wip-sorter-team-row" — that class is also
+  // used by tiered team rows further down the list, so a plain scan would
+  // latch onto one of those instead of the actual pinned block.
+  function pinTeamRow(list, row) {
+    list.__pinTail = list.__pinTail || null;
+    if (list.__pinTail && list.__pinTail.isConnected) {
+      list.__pinTail.insertAdjacentElement("afterend", row);
+    } else {
+      list.insertAdjacentElement("afterbegin", row);
+    }
+    list.__pinTail = row;
+  }
+
+  // Moves `row` to become the current tail of its tier's group. `row` is
+  // already a child of `list` (it never left it), so this is always a safe
+  // same-parent reorder.
+  function insertTierRow(list, tierId, row) {
+    const heading = getOrCreateHeading(list, tierId);
+    list.__tail = list.__tail || {};
+    const tail = list.__tail[tierId] || heading;
+    tail.insertAdjacentElement("afterend", row);
+    list.__tail[tierId] = row;
+    heading.__rowCount = (heading.__rowCount || 0) + 1;
+    if (heading.__count) heading.__count.textContent = `(${heading.__rowCount})`;
   }
 
   function refreshCounts() {
-    document.querySelectorAll(".wip-sorter-section").forEach((sec) => {
-      const n = sec.querySelectorAll(`[${MARK}]`).length;
-      const count =
-        sec.querySelector(".wip-sorter-count") ||
-        (sec.__heading && sec.__heading.querySelector(".wip-sorter-count"));
-      if (count) count.textContent = n ? `(${n})` : "";
-      const hide = n === 0;
-      sec.style.display = hide ? "none" : "";
-      if (sec.__heading) sec.__heading.style.display = hide ? "none" : "";
-    });
     applyTierCollapsed();
   }
 
-  // Undo everything we did: move rows back to their original list, drop
-  // sections and headings, clear markers, allow "show more" clicks again.
+  // Undo everything we did: drop headings, clear markers/classes off rows
+  // (rows never left their original list, so there's nothing to move back),
+  // and allow "show more" clicks again.
   function resetAll() {
-    document.querySelectorAll(".wip-sorter-section").forEach((sec) => {
-      const list = sec.__list;
-      sec.querySelectorAll(`[${MARK}]`).forEach((row) => {
-        row.removeAttribute(MARK);
-        row.classList.remove("wip-sorter-row", "wip-sorter-row-blocked", "wip-sorter-row-approved", "wip-sorter-row-wip");
-        if (list && list.isConnected) list.appendChild(row);
-      });
-      if (sec.__heading) sec.__heading.remove();
-      sec.remove();
-      if (list) list.__sections = {};
+    document.querySelectorAll(".wip-sorter-section-heading").forEach((heading) => heading.remove());
+    document.querySelectorAll(`[${MARK}]`).forEach((row) => {
+      row.removeAttribute(MARK);
+      row.classList.remove(
+        "wip-sorter-row",
+        "wip-sorter-row-blocked",
+        "wip-sorter-row-approved",
+        "wip-sorter-row-wip",
+        "wip-sorter-row-hidden"
+      );
     });
-    document.querySelectorAll(`[${MARK}]`).forEach((el) => el.removeAttribute(MARK));
     document.querySelectorAll(".wip-sorter-team-badge").forEach((el) => el.remove());
     document.querySelectorAll(".wip-sorter-team-row").forEach((el) => el.classList.remove("wip-sorter-team-row"));
     document.querySelectorAll("[data-wip-clicked]").forEach((el) => delete el.dataset.wipClicked);
     expandClicks.clear();
+  }
+
+  // ---- Dashboard: zen mode --------------------------------------------------
+  //
+  // Hides the sidebar (repository search / recently viewed) and centers the
+  // main panel in a narrower column with generous side padding.
+
+  const SIDE_PANEL_SELECTOR = ".side-panel";
+  let zenToggleBtn = null;
+
+  function setZenMode(enabled) {
+    SETTINGS.zenMode = enabled;
+    if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ zenMode: enabled });
+    }
+    applyZenMode();
+  }
+
+  function buildZenToggle() {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "wip-sorter-zen-toggle";
+    btn.textContent = "🧘";
+    setTooltip(btn, "Toggle zen mode");
+    btn.addEventListener("click", () => setZenMode(!SETTINGS.zenMode));
+    document.body.appendChild(btn);
+    return btn;
+  }
+
+  // Applied on every settings change and every sortOnce() pass — cheap (a
+  // couple of class toggles) and keeps the toggle button in sync no matter
+  // how zenMode got flipped (options page or the floating button itself).
+  function applyZenMode() {
+    if (isSinglePrPage()) {
+      if (zenToggleBtn) {
+        zenToggleBtn.remove();
+        zenToggleBtn = null;
+      }
+      return;
+    }
+    if (!document.querySelector(SIDE_PANEL_SELECTOR)) return; // not the dashboard layout
+
+    document.documentElement.classList.toggle("wip-sorter-zen", !!SETTINGS.zenMode);
+
+    if (!zenToggleBtn || !zenToggleBtn.isConnected) zenToggleBtn = buildZenToggle();
+    zenToggleBtn.classList.toggle("wip-sorter-zen-toggle-active", !!SETTINGS.zenMode);
+    zenToggleBtn.setAttribute("aria-pressed", String(!!SETTINGS.zenMode));
   }
 
   // ---- Diff view: prev/next file navigation --------------------------------
@@ -641,7 +723,13 @@
       const row = findRow(link);
       if (!row || seen.has(row)) return;
       seen.add(row);
-      if (row.closest(".wip-sorter-section") || row.hasAttribute(MARK)) return;
+      // Rows already tiered (or skipped) are settled for good. Rows still
+      // marked "main" are re-examined every pass: a freshly-added PR often
+      // renders before Bitbucket's async build-status/approval info has
+      // arrived, so its first classification can wrongly miss a tier — this
+      // lets it get promoted as soon as that info shows up, without waiting
+      // for a full page reload.
+      if (row.hasAttribute(MARK) && row.getAttribute(MARK) !== "main") return;
 
       const title = titleOf(link);
       if (!title) return;
@@ -668,10 +756,7 @@
 
       if (!tier) {
         if (team && SETTINGS.pinTeam && row.parentElement) {
-          const list = row.parentElement;
-          const lastTeam = [...list.children].filter((r) => r !== row && r.classList.contains("wip-sorter-team-row")).pop();
-          if (lastTeam) lastTeam.insertAdjacentElement("afterend", row);
-          else list.insertAdjacentElement("afterbegin", row);
+          pinTeamRow(row.parentElement, row);
         }
         return;
       }
@@ -679,7 +764,7 @@
       const list = row.parentElement;
       if (!list) return;
       row.classList.add("wip-sorter-row", `wip-sorter-row-${tier}`);
-      sectionFor(list, tier).appendChild(row);
+      insertTierRow(list, tier, row);
     });
 
     refreshCounts();
@@ -694,6 +779,7 @@
       try {
         sortOnce();
         refreshFileNav();
+        applyZenMode();
       } catch (e) {
         console.error("[better-stash] error:", e);
       }
@@ -703,7 +789,6 @@
 
   const observer = new MutationObserver((mutations) => {
     const external = mutations.some((m) => {
-      if (m.target.closest && m.target.closest(".wip-sorter-section")) return false;
       const added = [...m.addedNodes];
       if (added.length && added.every((n) => n.nodeType === 1 && n.className && /wip-sorter-/.test(n.className))) return false;
       return true;
@@ -740,6 +825,14 @@
       if (keys.length === 1 && keys[0] === "collapsedTiers") {
         SETTINGS.collapsedTiers = changes.collapsedTiers.newValue || {};
         applyTierCollapsed();
+        return;
+      }
+
+      // Same idea for zen mode: a pure CSS/layout toggle, no need to
+      // re-classify every row.
+      if (keys.length === 1 && keys[0] === "zenMode") {
+        SETTINGS.zenMode = !!changes.zenMode.newValue;
+        applyZenMode();
         return;
       }
 

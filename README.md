@@ -60,6 +60,9 @@ See [PRIVACY.md](PRIVACY.md) for the complete privacy statement.
 - **Diff view** — enables a floating prev/next file control (and `[` / `]` shortcuts) on a pull
   request's Diff tab, for stepping through files in large PRs without hunting through the file
   tree.
+- **Dashboard: Zen mode** — hides the sidebar and centers the main pull request list in a narrower
+  column with generous side padding. A small floating toggle on the dashboard flips it on/off
+  without opening settings; the state is remembered.
 
 If **Approved by me** does not detect an approval, verify your display name first. Bitbucket DOM
 markup varies by release, so sanitized HTML or screenshots are useful in bug reports.

@@ -4,6 +4,19 @@ All notable changes are documented here. This project follows [Semantic Versioni
 
 ## 1.3.0 - 2026-09-22
 
+- Fixed: tiering no longer relocates PR rows into newly-created containers. Bitbucket's
+  dashboard is React-rendered, and physically moving a row out of the `<tbody>`/list React
+  manages could make React's next re-render throw `insertBefore: not a child of this node`,
+  crashing the whole page ("this page couldn't be displayed") until reload. Tier headings and
+  rows now stay as children of the original list and are only reordered in place.
+- Fixed: a newly-added PR that appears on the dashboard (e.g. someone just opened one) could
+  get stuck at the bottom of the untiered list instead of its Blocked/Approved/WIP section,
+  because its build-status/approval info hadn't rendered yet at the moment it was first scanned.
+  Untiered rows are now re-checked on every pass until they're either tiered or settle for good.
+- Fixed: pinning team members' rows to the top of a list broke after the crash fix above —
+  it scanned all rows for the "team" class to find where to insert, but tiered team rows
+  further down the list (e.g. in Approved) now carry that class too, since everything stays in
+  one list. It now tracks its own top-of-list position instead of scanning for that class.
 - Fixed: tiering/sorting no longer runs on a single pull request's own page, so it can't
   interfere with the diff/file view.
 - Added: floating prev/next file navigation (with `[` / `]` shortcuts) on the PR Diff tab.
@@ -12,6 +25,9 @@ All notable changes are documented here. This project follows [Semantic Versioni
   collapsed state remembered between page loads.
 - Added: whole PR row/card is now clickable through to the PR — links, buttons, and
   reviewer-avatar popovers inside it keep their normal behavior.
+- Added: dashboard Zen mode — hides the sidebar and centers the main panel in a narrower column
+  with generous side padding. Toggle it from Settings or the small floating button on the
+  dashboard; the state is remembered between page loads.
 
 ## 1.2.0 - 2026-09-10
 
