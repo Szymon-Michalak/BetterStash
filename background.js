@@ -1,6 +1,6 @@
 "use strict";
 
-importScripts("site-config.js");
+if (typeof importScripts === "function") importScripts("site-config.js");
 
 const CONTENT_SCRIPT_ID = "better-stash-content";
 let syncQueue = Promise.resolve();

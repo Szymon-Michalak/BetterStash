@@ -50,7 +50,7 @@ async function updateConnectionState(pattern) {
 }
 
 async function load() {
-  if (!store) return status("Chrome storage is unavailable. Reload the extension.", true);
+  if (!store) return status("Extension storage is unavailable. Reload the extension.", true);
   try {
     const settings = await storageGet(DEFAULTS);
     FORM_KEYS.forEach((key) => {
@@ -66,7 +66,7 @@ async function load() {
 }
 
 async function saveSettings() {
-  if (!store) return status("Chrome storage is unavailable. Reload the extension.", true);
+  if (!store) return status("Extension storage is unavailable. Reload the extension.", true);
   const settings = {};
   FORM_KEYS.forEach((key) => {
     const element = $(key);

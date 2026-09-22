@@ -10,6 +10,6 @@ Settings—including the configured site origin, display name, and optional team
 stored in `chrome.storage.local` on the user's device. They are not synchronized by this
 extension or sent to the maintainer.
 
-Host access is optional. Chrome requests access only to the origin entered by the user, and that
+Host access is optional. The browser requests access only to the origin entered by the user, and that
 permission can be removed at any time with **Disconnect** in the extension settings or through
-Chrome's extension controls.
+your browser's extension controls.

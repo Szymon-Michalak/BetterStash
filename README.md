@@ -1,6 +1,6 @@
 # BetterStash
 
-A privacy-friendly Chrome extension that organizes pull requests on Bitbucket Server and
+A privacy-friendly Chrome and Safari extension that organizes pull requests on Bitbucket Server and
 Bitbucket Data Center dashboards. It works entirely from the rendered page and makes no REST or
 other network requests of its own.
 
@@ -15,7 +15,7 @@ Below the main review list, BetterStash creates these optional tiers:
 It can also highlight or pin pull requests from configured teammates and automatically expand
 dashboard sections. Your own and recently closed pull requests are left untouched.
 
-## Install a release
+## Install a Chrome release
 
 1. Download `better-stash-vX.Y.Z.zip` from the repository's **Releases** page.
 2. Extract the ZIP to a permanent folder.
@@ -27,6 +27,12 @@ dashboard sections. Your own and recently closed pull requests are left untouche
 
 Chrome does not keep unpacked extensions when their extracted files are moved or deleted. Keep
 the release folder somewhere permanent.
+
+## Install a Safari release
+
+Each release also includes `better-stash-safari-vX.Y.Z-macos-developer.zip`, containing a
+macOS app for Apple Silicon and Intel. This is a developer build that requires Safari’s
+**Allow Unsigned Extensions** option. See [Safari installation and builds](SAFARI.md).
 
 ## Install from source
 
@@ -42,7 +48,7 @@ compile step and no runtime dependency on Node.js.
 
 ## Permissions and privacy
 
-- `storage` stores settings locally in Chrome.
+- `storage` stores settings locally in your browser.
 - `scripting` registers the content script for the selected site.
 - Site access is optional and requested only after you select **Connect site**. The entered URL is
   reduced to its origin, such as `https://stash.example.com/*`.
@@ -86,7 +92,8 @@ npm run check
 ./scripts/package.sh
 ```
 
-The packaging script creates a validated release archive under `dist/`. See
+The Chrome packaging script creates a validated release archive under `dist/`. On macOS with
+Xcode, run `./scripts/package-safari.sh` to create the Safari developer app archive. See
 [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution workflow.
 
 ## Releasing
@@ -98,11 +105,12 @@ Releases use semantic versioning and are generated from Git tags:
 3. Run `npm test`, `npm run check`, and `./scripts/package.sh`.
 4. Commit the release and create a matching tag, for example `v1.2.0`.
 5. Push the commit and tag. GitHub Actions verifies the version and publishes the ZIP to a GitHub
-   Release with generated release notes.
+   Release with both Chrome and Safari archives and generated release notes.
 
 ## Compatibility
 
-The extension targets Chrome 96+ and Manifest V3. It is designed for Bitbucket Server/Data Center
+The extension targets Chrome 102+ and Manifest V3. Safari developer builds target Safari 16.4+
+on macOS 13+ (Apple Silicon and Intel). It is designed for Bitbucket Server/Data Center
 dashboard markup; Atlassian can change that markup between versions. Bitbucket Cloud is not
 currently supported.
 

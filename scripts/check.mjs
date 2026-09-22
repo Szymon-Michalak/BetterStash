@@ -1,17 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
-const extensionFiles = [
-  "background.js",
-  "shared.js",
-  "layout.js",
-  "dashboard.js",
-  "diff.js",
-  "content.js",
-  "options.js",
-  "site-config.js",
-];
-const publicRuntimeFiles = ["manifest.json", "options.html", ...extensionFiles];
+import { extensionFiles } from "./extension.mjs";
+
+const publicRuntimeFiles = extensionFiles;
 const privateFragments = ["team-icon.png"];
 
 const manifest = JSON.parse(await readFile("manifest.json", "utf8"));
@@ -28,7 +20,7 @@ if (!manifest.optional_host_permissions?.includes("https://*/*")) {
   throw new Error("manifest.json must declare optional HTTPS host access.");
 }
 
-for (const file of extensionFiles) {
+for (const file of extensionFiles.filter((file) => file.endsWith(".js"))) {
   const result = spawnSync(process.execPath, ["--check", file], { stdio: "inherit" });
   if (result.status !== 0) process.exit(result.status || 1);
 }

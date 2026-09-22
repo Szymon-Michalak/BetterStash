@@ -20,6 +20,8 @@ Contributions and sanitized bug reports are welcome.
 
 The codebase deliberately has no runtime dependencies or build step. Keep new permissions to the
 minimum required and explain any manifest permission change in the pull request.
+Safari packaging requires macOS with full Xcode; run `./scripts/package-safari.sh`. CI builds
+both browsers. See [SAFARI.md](SAFARI.md) for the developer installation steps.
 
 ## Reporting DOM compatibility issues
 
@@ -37,5 +39,8 @@ names, project keys, and repository data before posting.
 - `background.js`: optional site registration; `options.js`: settings form.
 
 Content scripts load in the order declared in `background.js`, sharing one `BetterStash`
-namespace in Chrome's isolated world. Feature factories receive the same settings object.
+namespace in the browser's isolated world. Feature factories receive the same settings object.
 DOM regression tests use jsdom as a development dependency; release archives contain no dependencies.
+
+Browser packaging shares the file list and manifest conversion in `scripts/extension.mjs`.
+Chrome and Safari package scripts stage those files without copying tests or dependencies.
