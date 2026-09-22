@@ -2,8 +2,8 @@
 //
 // Splits pull request lists into tiers, in this order below the main list:
 //   1. Blocked           — merge conflict or failed build
-//   2. Approved by me    — my reviewer avatar carries an "approved" badge
-//   3. Work in progress  — title matches WIP_PATTERN
+//   2. Work in progress  — title matches WIP_PATTERN
+//   3. Approved by me    — my reviewer avatar carries an "approved" badge
 // Everything else stays in the original list ("needs my review").
 // Rows under "Your pull requests" are never touched.
 
@@ -73,10 +73,14 @@
     return SINGLE_PR_PATH.test(location.pathname);
   }
 
+  // Canonical display order: unsorted (untouched, at the top) then these
+  // tiers below, in this exact order — classify()'s priority order (which
+  // tier "wins" when a row matches more than one) is independent and lives
+  // there, not here.
   const TIERS = [
     { id: "blocked",  label: "Blocked" },
-    { id: "approved", label: "Approved by me" },
     { id: "wip",      label: "Work in progress" },
+    { id: "approved", label: "Approved by me" },
   ];
 
   // ---- Generic helpers ----------------------------------------------------
@@ -214,7 +218,123 @@
     (leaf || link).insertAdjacentElement("afterend", makeIcon("wip-sorter-name-badge"));
   }
 
+  // The dashboard renders as a <table>, so Bitbucket sizes every row's
+  // ".state-column" (Conflict/Approved/Needs work/…) to the same width
+  // across ALL rows, based on whichever row's label is longest. One row
+  // showing a long label — typically only in the Blocked tier — forces
+  // every row's title column narrower for the whole table, which reads as
+  // a visible reflow the moment that tier is expanded.
+  //
+  // Rather than just shrinking the label in place (still inside the shared
+  // column, still contributing to its width), this moves the *actual*
+  // status element out of the table entirely and appends it to the row's
+  // free-flowing ".details" line (after the branch lozenge) — the column
+  // it vacates can no longer force a reflow. Moving the real node (not a
+  // copy) keeps whatever color/highlight Bitbucket applies to it for free;
+  // we only normalize its font size to match the neighboring branch
+  // lozenge, we never touch its color/background. Full label text (e.g.
+  // "Conflict") is kept — this only happens in zen mode; in the normal
+  // wide layout the element is moved right back where it came from, so
+  // that view is untouched.
+  //
+  // Note: we deliberately do NOT try to force the status lozenge's font
+  // metrics to match the branch lozenge. They turned out to be two
+  // genuinely different native components — the branch tag is a plain
+  // system-font gray tag, while the status lozenge (Conflict/Merged/…) is
+  // a real Atlaskit Lozenge with its own deliberate uppercase/bold/11px
+  // design and severity color. Copying one's metrics onto the other only
+  // broke the status lozenge's real, correct look (confirmed by comparing
+  // exported computed styles) without making them actually match, since
+  // the color/severity is still different anyway. We just leave the
+  // native lozenge exactly as Bitbucket renders it, only relocating it.
+  function prepareStateLabel(row) {
+    const cell = row.querySelector("td.state-column");
+    if (!cell || !cell.firstElementChild) return;
+    const wrapper = cell.firstElementChild;
+    if (wrapper.dataset.wipStatePrepared) return;
+
+    const leaf = [...wrapper.querySelectorAll("span, div")].find(
+      (el) => el.children.length === 0 && text(el)
+    );
+    const full = leaf && text(leaf);
+    if (!leaf || !full) return;
+
+    wrapper.dataset.wipStatePrepared = "1";
+    wrapper.__wipOrigParent = cell;
+    wrapper.__wipOrigNext = wrapper.nextSibling;
+    wrapper.classList.add("wip-sorter-state-badge", "details-item");
+    leaf.classList.add("wip-sorter-state-text");
+  }
+
+  // Moves one prepared status wrapper to where it belongs for the current
+  // zen state — into the row's ".details" line when zen mode is on, back
+  // into its original table cell otherwise. Cheap no-op if already there.
+  function placeStateLabel(wrapper, zen) {
+    if (zen) {
+      const row = wrapper.__wipOrigParent && wrapper.__wipOrigParent.closest("tr, li, [role='row']");
+      const details = row && row.querySelector(".details");
+      if (details && wrapper.parentElement !== details) details.appendChild(wrapper);
+      return;
+    }
+    if (!wrapper.__wipOrigParent || wrapper.parentElement === wrapper.__wipOrigParent) return;
+    if (wrapper.__wipOrigNext && wrapper.__wipOrigNext.isConnected) {
+      wrapper.__wipOrigParent.insertBefore(wrapper, wrapper.__wipOrigNext);
+    } else {
+      wrapper.__wipOrigParent.appendChild(wrapper);
+    }
+  }
+
+  // Reconciles every prepared status label against the current zen state.
+  // Called after any zen toggle and at the end of every sortOnce() pass (to
+  // place labels freshly prepared during that same pass).
+  function applyStateLabelPlacement() {
+    const zen = !!SETTINGS.zenMode;
+    document.querySelectorAll(".wip-sorter-state-badge").forEach((wrapper) => placeStateLabel(wrapper, zen));
+  }
+
+  // There's no <colgroup> — this is a plain auto-layout <table> where the
+  // header's "summary-column" <th> uses colspan to span several otherwise
+  // unlabeled sub-columns (avatar, summary, state, new-commits, comments,
+  // tasks) as one header cell. If we hide the state/new-commits <td>s in
+  // every body row (via CSS, in zen mode) without also shrinking that
+  // colspan to match, the header spans more columns than the body rows
+  // actually have there, so browsers misalign everything to the right of
+  // it (reviewers/builds). Shrinking the colspan by the number of columns
+  // we hid keeps header and body cell counts consistent again.
+  function applyZenColumnCollapse() {
+    const zen = !!SETTINGS.zenMode;
+    document.querySelectorAll("table").forEach((table) => {
+      const hasState = !!table.querySelector("td.state-column");
+      const hasCommits = !!table.querySelector("td.new-commits-column");
+      if (!hasState && !hasCommits) return;
+      const th = table.querySelector("thead th.summary-column[colspan]");
+      if (!th) return;
+      if (!th.dataset.wipOrigColspan) th.dataset.wipOrigColspan = th.getAttribute("colspan") || "";
+      const orig = parseInt(th.dataset.wipOrigColspan, 10);
+      if (!orig) return;
+      const hiddenCount = (hasState ? 1 : 0) + (hasCommits ? 1 : 0);
+      th.setAttribute("colspan", zen ? String(Math.max(1, orig - hiddenCount)) : th.dataset.wipOrigColspan);
+    });
+  }
+
+  // "New commits since your last review" only ever shows as a bare icon
+  // with a tooltip — the ".new-commits-column" cell is otherwise empty for
+  // every other row. Rather than relocating the real icon (too heavy a
+  // presence for what's just a boolean signal), we mark the row's avatar
+  // with a small dot indicator instead; no DOM move needed, so there's
+  // nothing to restore when leaving zen mode.
+  function markNewCommitsIndicator(row) {
+    const cell = row.querySelector("td.new-commits-column");
+    const hasNewCommits = !!(cell && cell.querySelector(".new-commits-icon"));
+    const avatar = row.querySelector("td.avatar-column .user-avatar") || row.querySelector("td.avatar-column");
+    if (!avatar) return;
+    avatar.classList.toggle("wip-sorter-has-new-commits", hasNewCommits);
+    if (hasNewCommits) avatar.title = "New commits since your last review";
+    else if (avatar.title === "New commits since your last review") avatar.removeAttribute("title");
+  }
+
   // ---- Row classification -------------------------------------------------
+
 
   function hasConflict(row) {
     if (row.querySelector("[class*='conflict' i], [data-conflict], [aria-label*='conflict' i], [title*='conflict' i]")) return true;
@@ -406,21 +526,62 @@
     heading.__toggleEl = toggleEl;
     heading.__count = count;
 
-    // Anchor after the last preceding tier's current tail (heading or row),
-    // else just append it at the current end of `list`.
+    // Tier headings can be *created* in whatever order their first row is
+    // encountered in the DOM (or promoted into a tier later on), which has
+    // no relation to TIERS' canonical order. So: anchor after the last
+    // preceding tier's current tail (heading or row) if one already exists;
+    // otherwise, if a *later* tier's heading already exists, insert right
+    // before it (so this heading doesn't get appended past it); otherwise
+    // append at the current end of `list`.
     list.__tail = list.__tail || {};
+    const tierIndex = TIERS.findIndex((t) => t.id === tierId);
     let anchor = null;
-    for (const t of TIERS) {
-      if (t.id === tierId) break;
-      const tail = list.__tail[t.id];
+    for (let i = 0; i < tierIndex; i++) {
+      const tail = list.__tail[TIERS[i].id];
       if (tail && tail.isConnected) anchor = tail;
     }
-    if (anchor) anchor.insertAdjacentElement("afterend", heading);
-    else list.appendChild(heading);
+    if (anchor) {
+      anchor.insertAdjacentElement("afterend", heading);
+    } else {
+      let before = null;
+      for (let i = tierIndex + 1; i < TIERS.length; i++) {
+        const laterHeading = list.__headings[TIERS[i].id];
+        if (laterHeading && laterHeading.isConnected) {
+          before = laterHeading;
+          break;
+        }
+      }
+      if (before) before.insertAdjacentElement("beforebegin", heading);
+      else list.appendChild(heading);
+    }
 
     list.__headings[tierId] = heading;
     list.__tail[tierId] = heading;
     return heading;
+  }
+
+  const REDUCE_MOTION = matchMedia("(prefers-reduced-motion: reduce)");
+
+  // Same crossfade trick used for zen mode: rather than animating a slide
+  // from the row's old position to its new one (which reads as "jumping
+  // around" no matter how it's eased), hide it instantly, perform the DOM
+  // move while it's invisible, then let it fade in at its real final spot.
+  // Nothing ever visibly moves — only opacity animates.
+  function moveRowSmoothly(row, move) {
+    if (REDUCE_MOTION.matches) {
+      move();
+      return;
+    }
+    row.style.transition = "none";
+    row.style.opacity = "0";
+    move();
+    // Force layout so the browser commits the invisible state before the
+    // move above and the fade-in below land in the same frame.
+    row.getBoundingClientRect();
+    requestAnimationFrame(() => {
+      row.style.transition = "";
+      row.style.opacity = "";
+    });
   }
 
   // Keeps untiered team-member rows as a contiguous block at the very top of
@@ -430,25 +591,106 @@
   // latch onto one of those instead of the actual pinned block.
   function pinTeamRow(list, row) {
     list.__pinTail = list.__pinTail || null;
-    if (list.__pinTail && list.__pinTail.isConnected) {
-      list.__pinTail.insertAdjacentElement("afterend", row);
-    } else {
-      list.insertAdjacentElement("afterbegin", row);
-    }
+    moveRowSmoothly(row, () => {
+      if (list.__pinTail && list.__pinTail.isConnected) {
+        list.__pinTail.insertAdjacentElement("afterend", row);
+      } else {
+        list.insertAdjacentElement("afterbegin", row);
+      }
+    });
     list.__pinTail = row;
   }
 
-  // Moves `row` to become the current tail of its tier's group. `row` is
-  // already a child of `list` (it never left it), so this is always a safe
-  // same-parent reorder.
-  function insertTierRow(list, tierId, row) {
+  // Untiered rows are never actively moved into a group, so they stay
+  // wherever they were in the original DOM. That's fine as long as they're
+  // all above every tier section — but a row rendered/promoted *after* a
+  // tier heading already exists (e.g. via "Show more" auto-expand, or a
+  // React re-render appending new PRs at the end) would otherwise land
+  // below that heading, splitting "unsorted" into multiple interleaved
+  // chunks. Guard against that by yanking any untiered row that ends up
+  // after the first existing tier heading back above it.
+  function keepUnsortedAboveTiers(list, row) {
+    list.__headings = list.__headings || {};
+    let firstHeading = null;
+    for (const t of TIERS) {
+      const h = list.__headings[t.id];
+      if (h && h.isConnected) {
+        firstHeading = h;
+        break;
+      }
+    }
+    if (!firstHeading || firstHeading === row) return;
+    // DOCUMENT_POSITION_FOLLOWING on firstHeading (relative to row) means
+    // firstHeading comes after row — already correctly positioned above it.
+    const rel = row.compareDocumentPosition(firstHeading);
+    if (rel & Node.DOCUMENT_POSITION_FOLLOWING) return;
+    moveRowSmoothly(row, () => firstHeading.insertAdjacentElement("beforebegin", row));
+  }
+
+  // Moves `row` to become the current tail of its tier's group, creating
+  // the heading if needed. No-ops if `row` is already the known tail (the
+  // common case — avoids pointless DOM churn on every pass). Returns the
+  // heading so callers can update its displayed count.
+  function moveRowToTierTail(list, tierId, row) {
     const heading = getOrCreateHeading(list, tierId);
     list.__tail = list.__tail || {};
     const tail = list.__tail[tierId] || heading;
-    tail.insertAdjacentElement("afterend", row);
-    list.__tail[tierId] = row;
+    if (tail !== row) {
+      moveRowSmoothly(row, () => tail.insertAdjacentElement("afterend", row));
+      list.__tail[tierId] = row;
+    }
+    return heading;
+  }
+
+  // First-time placement of a freshly-classified row: moves it and bumps
+  // its tier heading's displayed count.
+  function insertTierRow(list, tierId, row) {
+    const heading = moveRowToTierTail(list, tierId, row);
     heading.__rowCount = (heading.__rowCount || 0) + 1;
     if (heading.__count) heading.__count.textContent = `(${heading.__rowCount})`;
+  }
+
+  // Bitbucket's own React re-renders can reset an already-tiered row back
+  // to wherever it originally lived in the DOM — our MARK attribute
+  // survives on the reused node, but the physical move we made earlier
+  // gets silently undone (most visible as a tiered PR "jumping" into the
+  // unsorted area the moment its collapsed tier is expanded, since it was
+  // there all along, just hidden). This re-homes it without touching the
+  // heading's count (it was already counted once, on first classification).
+  //
+  // Deliberately doesn't reuse moveRowToTierTail()/its cached tail pointer:
+  // if `row` itself *is* the cached tail (the common case, since the most
+  // recently added row usually is), that cache would wrongly look
+  // "already correct" and skip the move entirely. Instead this re-derives
+  // the true current tail by scanning forward from the heading — cheap,
+  // since a tier's rows are always contiguous.
+  function reassertTierRowPosition(list, tierId, row) {
+    const heading = list.__headings && list.__headings[tierId];
+    if (!heading || !heading.isConnected) {
+      moveRowToTierTail(list, tierId, row);
+      return;
+    }
+    let anchor = heading;
+    let sib = heading.nextElementSibling;
+    while (sib && sib !== row && sib.getAttribute && sib.getAttribute(MARK) === tierId) {
+      anchor = sib;
+      sib = sib.nextElementSibling;
+    }
+    moveRowSmoothly(row, () => anchor.insertAdjacentElement("afterend", row));
+    list.__tail = list.__tail || {};
+    list.__tail[tierId] = row;
+  }
+
+  // True if `row` is still immediately preceded by either its tier's
+  // heading or another row of the same tier — i.e. still contiguous within
+  // its section, regardless of whether it's currently the tracked "tail".
+  function isTierRowCorrectlyPlaced(list, tierId, row) {
+    const heading = list.__headings && list.__headings[tierId];
+    if (!heading || !heading.isConnected) return false;
+    const prev = row.previousElementSibling;
+    if (!prev) return false;
+    if (prev === heading) return true;
+    return prev.getAttribute && prev.getAttribute(MARK) === tierId;
   }
 
   function refreshCounts() {
@@ -517,7 +759,8 @@
     if (!document.querySelector(SIDE_PANEL_SELECTOR)) return; // not the dashboard layout
 
     document.documentElement.classList.toggle("wip-sorter-zen", !!SETTINGS.zenMode);
-
+    applyStateLabelPlacement();
+    applyZenColumnCollapse();
     if (!zenToggleBtn || !zenToggleBtn.isConnected) zenToggleBtn = buildZenToggle();
     zenToggleBtn.classList.toggle("wip-sorter-zen-toggle-active", !!SETTINGS.zenMode);
     zenToggleBtn.setAttribute("aria-pressed", String(!!SETTINGS.zenMode));
@@ -803,13 +1046,25 @@
       const row = findRow(link);
       if (!row || seen.has(row)) return;
       seen.add(row);
-      // Rows already tiered (or skipped) are settled for good. Rows still
-      // marked "main" are re-examined every pass: a freshly-added PR often
-      // renders before Bitbucket's async build-status/approval info has
-      // arrived, so its first classification can wrongly miss a tier — this
-      // lets it get promoted as soon as that info shows up, without waiting
-      // for a full page reload.
-      if (row.hasAttribute(MARK) && row.getAttribute(MARK) !== "main") return;
+      // Rows already tiered (or skipped) don't get reclassified — but a
+      // tiered row can still get physically displaced by Bitbucket's own
+      // React re-renders (see reassertTierRowPosition()), so we cheaply
+      // verify its position every pass and only move it if it's actually
+      // drifted. Rows still marked "main" are fully re-examined every
+      // pass: a freshly-added PR often renders before Bitbucket's async
+      // build-status/approval info has arrived, so its first
+      // classification can wrongly miss a tier — this lets it get
+      // promoted as soon as that info shows up, without waiting for a
+      // full page reload.
+      if (row.hasAttribute(MARK)) {
+        const mark = row.getAttribute(MARK);
+        if (mark !== "main") {
+          if (row.parentElement && TIERS.some((t) => t.id === mark) && !isTierRowCorrectlyPlaced(row.parentElement, mark, row)) {
+            reassertTierRowPosition(row.parentElement, mark, row);
+          }
+          return;
+        }
+      }
 
       const title = titleOf(link);
       if (!title) return;
@@ -818,6 +1073,8 @@
       // it still behave normally; see the delegated click handler below).
       row.classList.add("wip-sorter-card-clickable");
       row.dataset.wipCardHref = link.href;
+      prepareStateLabel(row);
+      markNewCommitsIndicator(row);
 
       // Leave my own PRs and closed PRs alone.
       if (SKIP_SECTION_PATTERN.test(sectionTitleFor(row)) || isClosedRow(row)) {
@@ -837,6 +1094,8 @@
       if (!tier) {
         if (team && SETTINGS.pinTeam && row.parentElement) {
           pinTeamRow(row.parentElement, row);
+        } else if (row.parentElement) {
+          keepUnsortedAboveTiers(row.parentElement, row);
         }
         return;
       }
@@ -849,6 +1108,8 @@
 
     refreshCounts();
     autoExpand();
+    applyStateLabelPlacement();
+    applyZenColumnCollapse();
   }
 
   let timer = null;

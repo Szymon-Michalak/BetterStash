@@ -30,14 +30,44 @@ tr.wip-sorter-header-row td {
 .wip-sorter-heading-blocked { color: #de350b; }
 .wip-sorter-heading-approved { color: #00875a; }
 
+/* Row reordering: content.js hides a row (opacity 0), moves it in the DOM,
+   then clears the inline override so it fades in at its real final spot.
+   Nothing ever slides — only opacity animates, matching the zen-mode
+   crossfade. */
+.wip-sorter-row {
+  transition: opacity 0.18s ease;
+}
+
 .wip-sorter-row-approved,
 .wip-sorter-row-wip {
   opacity: 0.6;
+  transition: opacity 0.18s ease;
 }
 
 .wip-sorter-row-approved:hover,
 .wip-sorter-row-wip:hover {
   opacity: 1;
+}
+
+/* New tier headings pop in as soon as they're created — fade them in
+   instead of having them appear instantly mid-reorder. */
+.wip-sorter-section-heading {
+  animation: wip-sorter-fade-in 0.25s ease;
+}
+
+@keyframes wip-sorter-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wip-sorter-row,
+  .wip-sorter-row-approved,
+  .wip-sorter-row-wip,
+  .wip-sorter-section-heading {
+    transition: none;
+    animation: none;
+  }
 }
 
 html.wip-sorter-no-dim .wip-sorter-row-approved,
@@ -225,9 +255,38 @@ li.wip-sorter-card-clickable:hover,
 
 /* Dashboard: zen mode — hide the sidebar and keep the main panel narrow with
    generous side padding. The top header is left as-is; dimming it just drew
-   more attention via the opacity/color contrast. */
+   more attention via the opacity/color contrast.
+
+   A pure crossfade, no layout animation: animating width/flex reads as the
+   panel "sliding" or "growing" in, which is exactly what felt off. Instead
+   width/padding/margin only ever *snap* (no transition — or a 0.01s one,
+   effectively instant), timed so the snap happens while the panel is
+   already invisible:
+     Entering: opacity fades out first (real transition, sidebar still full
+       width) → once it's gone, width snaps to 0 near-instantly (delayed).
+     Leaving: width snaps back to full size instantly (no delay — this rule
+       lives on the plain, non-.zen selector, so it applies the moment the
+       "wip-sorter-zen" class is removed) → opacity then fades back in.
+   Either way, width and opacity never change *at the same time* while
+   visible, so there's nothing to perceive as sliding — only a fade. */
+.side-panel {
+  overflow: hidden;
+  transition: opacity 0.15s ease;
+}
+
 html.wip-sorter-zen .side-panel {
-  display: none !important;
+  transition: opacity 0.15s ease, width 0.01s linear 0.15s, max-width 0.01s linear 0.15s,
+    min-width 0.01s linear 0.15s, flex 0.01s linear 0.15s, padding 0.01s linear 0.15s,
+    margin 0.01s linear 0.15s;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  flex: 0 0 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-width: 0 !important;
+  opacity: 0;
+  pointer-events: none;
 }
 
 html.wip-sorter-zen .main-panel {
@@ -237,7 +296,70 @@ html.wip-sorter-zen .main-panel {
   padding-left: 4vw;
   padding-right: 4vw;
   box-sizing: border-box;
-  transition: padding 0.15s ease;
+  transition: padding 0.2s ease, max-width 0.2s ease, margin 0.2s ease;
+}
+
+/* Zen mode: the row status label ("Conflict", "Approved", …) gets moved
+   (see prepareStateLabel()/placeStateLabel() in content.js) out of the
+   shared table column and into the row's ".details" line, right after the
+   branch lozenge. We keep the full label text and its original highlight
+   color/background untouched — only the font size is normalized so it
+   reads at the same scale as the neighboring branch lozenge. */
+html.wip-sorter-zen .wip-sorter-state-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+html.wip-sorter-zen .wip-sorter-state-text {
+  font-size: 11px;
+  line-height: 1;
+  vertical-align: middle;
+  text-transform: lowercase;
+}
+
+/* The "state" and "new commits" table columns have no <colgroup> — this is
+   a plain auto-layout table where the header's ".summary-column" <th>
+   spans them (and other unlabeled sub-columns) via colspan. Hiding these
+   <td>s in every body row, combined with shrinking that header colspan to
+   match (see applyZenColumnCollapse() in content.js), keeps header/body
+   cell counts consistent so the table reflows cleanly instead of
+   misaligning everything to the right. Their real content was already
+   moved out (state label) or reduced to an avatar dot (new commits). */
+html.wip-sorter-zen td.state-column,
+html.wip-sorter-zen td.new-commits-column {
+  display: none;
+}
+
+/* "New commits since your last review" is reduced to a small blue dot on
+   the row's avatar instead of a relocated icon — much less visual weight
+   than moving the real element, and needs no restore-on-exit bookkeeping
+   since nothing moves. */
+html.wip-sorter-zen td.avatar-column .user-avatar,
+html.wip-sorter-zen td.avatar-column {
+  position: relative;
+}
+
+html.wip-sorter-zen .wip-sorter-has-new-commits::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #0052cc;
+  border: 2px solid var(--background-default, #fff);
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .side-panel,
+  html.wip-sorter-zen .side-panel,
+  html.wip-sorter-zen .main-panel {
+    transition: none;
+  }
 }
 
 .wip-sorter-zen-toggle {
