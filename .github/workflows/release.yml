@@ -19,6 +19,7 @@ jobs:
         run: |
           VERSION="$(node -p "require('./manifest.json').version")"
           test "$GITHUB_REF_NAME" = "v$VERSION"
+      - run: npm ci
       - run: npm test
       - run: ./scripts/package.sh
       - name: Publish GitHub release

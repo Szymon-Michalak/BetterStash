@@ -1,24 +1,9 @@
-const DEFAULTS = {
-  sitePattern: "",
-  identity: "",
-  team: "",
-  teamTint: true,
-  teamIcon: false,
-  pinTeam: false,
-  expandReview: true,
-  expandYours: false,
-  expandClosed: false,
-  tierBlocked: true,
-  tierApproved: true,
-  tierWip: true,
-  dimRows: true,
-  fileNav: true,
-  zenMode: false,
-};
+"use strict";
 
-const FORM_KEYS = Object.keys(DEFAULTS).filter((key) => key !== "sitePattern");
+const DEFAULTS = BetterStash.defaults;
+const FORM_KEYS = Object.keys(DEFAULTS).filter((key) => key !== "sitePattern" && key !== "collapsedTiers");
 const $ = (id) => document.getElementById(id);
-const store = chrome?.storage?.local || null;
+const store = globalThis.chrome?.storage?.local;
 let statusTimer;
 
 function status(message, isError = false) {
@@ -31,48 +16,21 @@ function status(message, isError = false) {
   }
 }
 
-function storageGet(defaults) {
+function chromeCall(api, method, value) {
   return new Promise((resolve, reject) => {
-    store.get(defaults, (value) => {
+    api[method](value, (result) => {
       const error = chrome.runtime.lastError;
       if (error) reject(new Error(error.message));
-      else resolve(value);
+      else resolve(result);
     });
   });
 }
 
-function storageSet(value) {
-  return new Promise((resolve, reject) => {
-    store.set(value, () => {
-      const error = chrome.runtime.lastError;
-      if (error) reject(new Error(error.message));
-      else resolve();
-    });
-  });
-}
-
-function permissionContains(pattern) {
-  return new Promise((resolve) => {
-    chrome.permissions.contains({ origins: [pattern] }, resolve);
-  });
-}
-
-function requestPermission(pattern) {
-  return new Promise((resolve, reject) => {
-    chrome.permissions.request({ origins: [pattern] }, (granted) => {
-      const error = chrome.runtime.lastError;
-      if (error) reject(new Error(error.message));
-      else resolve(granted);
-    });
-  });
-}
-
-function removePermission(pattern) {
-  return new Promise((resolve) => {
-    if (!pattern) return resolve(false);
-    chrome.permissions.remove({ origins: [pattern] }, resolve);
-  });
-}
+const storageGet = (value) => chromeCall(store, "get", value);
+const storageSet = (value) => chromeCall(store, "set", value);
+const permissionContains = (pattern) => chromeCall(chrome.permissions, "contains", { origins: [pattern] });
+const requestPermission = (pattern) => chromeCall(chrome.permissions, "request", { origins: [pattern] });
+const removePermission = (pattern) => pattern && chromeCall(chrome.permissions, "remove", { origins: [pattern] });
 
 function syncRegistration() {
   return new Promise((resolve) => {
@@ -132,8 +90,7 @@ async function connectSite() {
   }
 
   try {
-    // Keep the permission prompt directly tied to the button click. Chrome can
-    // reject optional-permission requests after an unrelated async operation.
+    // Chrome requires the permission request before any unrelated await.
     const granted = await requestPermission(pattern);
     if (!granted) return status("Site access was not granted.", true);
 

@@ -9,8 +9,8 @@ other network requests of its own.
 Below the main review list, BetterStash creates these optional tiers:
 
 1. **Blocked** — pull requests with a merge conflict or failed build.
-2. **Approved by me** — pull requests carrying your approved reviewer badge.
-3. **Work in progress** — titles containing `WIP`, `Draft`, or `DO NOT MERGE`.
+2. **Work in progress** — titles containing `WIP`, `Draft`, or `DO NOT MERGE`.
+3. **Approved by me** — pull requests carrying your approved reviewer badge.
 
 It can also highlight or pin pull requests from configured teammates and automatically expand
 dashboard sections. Your own and recently closed pull requests are left untouched.
@@ -33,6 +33,7 @@ the release folder somewhere permanent.
 ```bash
 git clone <repository-url>
 cd BetterStash
+npm ci
 npm test
 ```
 
@@ -79,6 +80,7 @@ Requirements: Node.js 18 or newer for repository checks. The extension itself us
 CSS, and JavaScript.
 
 ```bash
+npm ci
 npm test
 npm run check
 ./scripts/package.sh

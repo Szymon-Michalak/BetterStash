@@ -9,6 +9,7 @@ Contributions and sanitized bug reports are welcome.
 3. Run:
 
    ```bash
+   npm ci
    npm test
    npm run check
    ./scripts/package.sh
@@ -25,3 +26,16 @@ minimum required and explain any manifest permission change in the pull request.
 Bitbucket markup differs between versions. Include the extension version, Bitbucket version, and
 the smallest sanitized DOM excerpt that reproduces the issue. Remove company names, URLs, user
 names, project keys, and repository data before posting.
+
+## Code layout
+
+- `shared.js`: settings defaults and small DOM helpers.
+- `dashboard.js`: identity, team matching, row classification, grouping, and expansion.
+- `layout.js`: zen mode and reversible status-label placement.
+- `diff.js`: file navigation, folder controls, and shortcut hints.
+- `content.js`: startup, settings changes, and page observation.
+- `background.js`: optional site registration; `options.js`: settings form.
+
+Content scripts load in the order declared in `background.js`, sharing one `BetterStash`
+namespace in Chrome's isolated world. Feature factories receive the same settings object.
+DOM regression tests use jsdom as a development dependency; release archives contain no dependencies.

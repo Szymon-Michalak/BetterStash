@@ -26,14 +26,9 @@ tr.wip-sorter-header-row td {
   background: transparent;
 }
 
-/* Tier accents */
 .wip-sorter-heading-blocked { color: #de350b; }
 .wip-sorter-heading-approved { color: #00875a; }
 
-/* Row reordering: content.js hides a row (opacity 0), moves it in the DOM,
-   then clears the inline override so it fades in at its real final spot.
-   Nothing ever slides — only opacity animates, matching the zen-mode
-   crossfade. */
 .wip-sorter-row {
   transition: opacity 0.18s ease;
 }
@@ -49,8 +44,6 @@ tr.wip-sorter-header-row td {
   opacity: 1;
 }
 
-/* New tier headings pop in as soon as they're created — fade them in
-   instead of having them appear instantly mid-reorder. */
 .wip-sorter-section-heading {
   animation: wip-sorter-fade-in 0.25s ease;
 }
@@ -87,14 +80,12 @@ html.wip-sorter-no-dim .wip-sorter-row-wip {
   vertical-align: baseline;
 }
 
-
 .wip-sorter-team-dot {
   background: #1d428a;
   border: 2px solid #ffc72c;
   box-sizing: border-box;
 }
 
-/* Team row tint (Warriors blue, subtle) */
 html.wip-sorter-team-tint tr.wip-sorter-team-row > td,
 html.wip-sorter-team-tint li.wip-sorter-team-row,
 html.wip-sorter-team-tint [role='row'].wip-sorter-team-row {
@@ -105,7 +96,6 @@ html.wip-sorter-team-tint tr.wip-sorter-team-row:hover > td {
   background-color: rgba(29, 66, 138, 0.12);
 }
 
-/* Diff view: prev/next file navigation */
 .wip-sorter-filenav {
   position: fixed;
   right: 20px;
@@ -123,6 +113,7 @@ html.wip-sorter-team-tint tr.wip-sorter-team-row:hover > td {
 }
 
 .wip-sorter-filenav-btn {
+  position: relative;
   border: 0;
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
@@ -137,11 +128,6 @@ html.wip-sorter-team-tint tr.wip-sorter-team-row:hover > td {
 
 .wip-sorter-filenav-btn:hover {
   background: rgba(255, 255, 255, 0.24);
-}
-
-/* Fast, styled tooltips (replaces the slow native `title` attribute) */
-.wip-sorter-filenav-btn {
-  position: relative;
 }
 
 .wip-sorter-filenav-btn::after,
@@ -205,7 +191,6 @@ li.file > a.wip-sorter-filenav-active .file-label {
   text-decoration: underline;
 }
 
-/* Dashboard: collapsible tier sections, whole heading bar is the toggle */
 .wip-sorter-heading-clickable {
   display: flex;
   align-items: center;
@@ -242,7 +227,6 @@ li.file > a.wip-sorter-filenav-active .file-label {
   display: none;
 }
 
-/* Dashboard: whole-card click-through */
 .wip-sorter-card-clickable {
   cursor: pointer;
 }
@@ -253,22 +237,6 @@ li.wip-sorter-card-clickable:hover,
   background-color: rgba(9, 30, 66, 0.035);
 }
 
-/* Dashboard: zen mode — hide the sidebar and keep the main panel narrow with
-   generous side padding. The top header is left as-is; dimming it just drew
-   more attention via the opacity/color contrast.
-
-   A pure crossfade, no layout animation: animating width/flex reads as the
-   panel "sliding" or "growing" in, which is exactly what felt off. Instead
-   width/padding/margin only ever *snap* (no transition — or a 0.01s one,
-   effectively instant), timed so the snap happens while the panel is
-   already invisible:
-     Entering: opacity fades out first (real transition, sidebar still full
-       width) → once it's gone, width snaps to 0 near-instantly (delayed).
-     Leaving: width snaps back to full size instantly (no delay — this rule
-       lives on the plain, non-.zen selector, so it applies the moment the
-       "wip-sorter-zen" class is removed) → opacity then fades back in.
-   Either way, width and opacity never change *at the same time* while
-   visible, so there's nothing to perceive as sliding — only a fade. */
 .side-panel {
   overflow: hidden;
   transition: opacity 0.15s ease;
@@ -299,12 +267,6 @@ html.wip-sorter-zen .main-panel {
   transition: padding 0.2s ease, max-width 0.2s ease, margin 0.2s ease;
 }
 
-/* Zen mode: the row status label ("Conflict", "Approved", …) gets moved
-   (see prepareStateLabel()/placeStateLabel() in content.js) out of the
-   shared table column and into the row's ".details" line, right after the
-   branch lozenge. We keep the full label text and its original highlight
-   color/background untouched — only the font size is normalized so it
-   reads at the same scale as the neighboring branch lozenge. */
 html.wip-sorter-zen .wip-sorter-state-badge {
   display: inline-flex;
   align-items: center;
@@ -319,23 +281,11 @@ html.wip-sorter-zen .wip-sorter-state-text {
   text-transform: lowercase;
 }
 
-/* The "state" and "new commits" table columns have no <colgroup> — this is
-   a plain auto-layout table where the header's ".summary-column" <th>
-   spans them (and other unlabeled sub-columns) via colspan. Hiding these
-   <td>s in every body row, combined with shrinking that header colspan to
-   match (see applyZenColumnCollapse() in content.js), keeps header/body
-   cell counts consistent so the table reflows cleanly instead of
-   misaligning everything to the right. Their real content was already
-   moved out (state label) or reduced to an avatar dot (new commits). */
 html.wip-sorter-zen td.state-column,
 html.wip-sorter-zen td.new-commits-column {
   display: none;
 }
 
-/* "New commits since your last review" is reduced to a small blue dot on
-   the row's avatar instead of a relocated icon — much less visual weight
-   than moving the real element, and needs no restore-on-exit bookkeeping
-   since nothing moves. */
 html.wip-sorter-zen td.avatar-column .user-avatar,
 html.wip-sorter-zen td.avatar-column {
   position: relative;
@@ -352,7 +302,6 @@ html.wip-sorter-zen .wip-sorter-has-new-commits::after {
   background: #0052cc;
   border: 2px solid var(--background-default, #fff);
 }
-
 
 @media (prefers-reduced-motion: reduce) {
   .side-panel,
@@ -397,7 +346,6 @@ html.wip-sorter-zen .wip-sorter-has-new-commits::after {
   opacity: 1;
 }
 
-/* Reuse the filenav bar's fast styled tooltip for the zen toggle too */
 .wip-sorter-zen-toggle::after,
 .wip-sorter-zen-toggle::before {
   position: absolute;
@@ -437,7 +385,6 @@ html.wip-sorter-zen .wip-sorter-has-new-commits::after {
   transform: translateY(0);
 }
 
-/* Inline shortcut hint appended to a PR's tab bar links, e.g. "Diff (2)". */
 .wip-sorter-tab-hint {
   margin-left: 4px;
   font-size: 0.8em;

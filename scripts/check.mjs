@@ -3,6 +3,10 @@ import { spawnSync } from "node:child_process";
 
 const extensionFiles = [
   "background.js",
+  "shared.js",
+  "layout.js",
+  "dashboard.js",
+  "diff.js",
   "content.js",
   "options.js",
   "site-config.js",

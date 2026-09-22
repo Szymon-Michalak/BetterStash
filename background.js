@@ -31,7 +31,7 @@ async function syncContentScript() {
     {
       id: CONTENT_SCRIPT_ID,
       matches: [normalizedPattern],
-      js: ["content.js"],
+      js: ["shared.js", "layout.js", "dashboard.js", "diff.js", "content.js"],
       css: ["styles.css"],
       runAt: "document_idle",
       persistAcrossSessions: true,
