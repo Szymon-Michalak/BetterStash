@@ -57,9 +57,15 @@ See [PRIVACY.md](PRIVACY.md) for the complete privacy statement.
 - **Team members** — display names to highlight, badge, or pin in the review list.
 - **Auto-expand** — independently controls the review, personal, and recently closed sections.
 - **Sections** — enables or disables the Blocked, Approved, and WIP tiers and row dimming.
+- **Diff view** — enables a floating prev/next file control (and `[` / `]` shortcuts) on a pull
+  request's Diff tab, for stepping through files in large PRs without hunting through the file
+  tree.
 
 If **Approved by me** does not detect an approval, verify your display name first. Bitbucket DOM
 markup varies by release, so sanitized HTML or screenshots are useful in bug reports.
+
+Tiering never runs on a single pull request's own page (Overview/Diff/Commits/…) — only on
+dashboard and list pages — so it can't reorder or hide anything while you're reviewing a diff.
 
 ## Development
 

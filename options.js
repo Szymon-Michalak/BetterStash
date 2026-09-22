@@ -12,6 +12,7 @@ const DEFAULTS = {
   tierApproved: true,
   tierWip: true,
   dimRows: true,
+  fileNav: true,
 };
 
 const FORM_KEYS = Object.keys(DEFAULTS).filter((key) => key !== "sitePattern");

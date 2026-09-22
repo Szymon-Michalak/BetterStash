@@ -29,6 +29,8 @@
     tierApproved: true,
     tierWip: true,
     dimRows: true,
+    fileNav: true,   // prev/next file navigation on the PR diff tab
+    collapsedTiers: {}, // { [tierId]: boolean } — persisted, not exposed in options
   };
   let MY_IDENTITY = [];
   let TEAM = [];
@@ -60,6 +62,14 @@
 
   const PR_LINK_SELECTOR = 'a[href*="/pull-requests/"]';
   const MARK = "data-wip-tier";
+
+  // A single PR's own page (overview/diff/commits/…), as opposed to a
+  // dashboard/list page. Tab links, comment links, etc. on this page also
+  // match PR_LINK_SELECTOR, so tiering must never run here.
+  const SINGLE_PR_PATH = /\/pull-requests\/\d+(\/|$)/;
+  function isSinglePrPage() {
+    return SINGLE_PR_PATH.test(location.pathname);
+  }
 
   const TIERS = [
     { id: "blocked",  label: "Blocked" },
@@ -293,6 +303,49 @@
 
   // ---- Section management -------------------------------------------------
 
+  function isTierCollapsed(tierId) {
+    return !!(SETTINGS.collapsedTiers && SETTINGS.collapsedTiers[tierId]);
+  }
+
+  function setTierCollapsed(tierId, collapsed) {
+    SETTINGS.collapsedTiers = { ...(SETTINGS.collapsedTiers || {}), [tierId]: collapsed };
+    if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({ collapsedTiers: SETTINGS.collapsedTiers });
+    }
+    applyTierCollapsed();
+  }
+
+  function applyTierCollapsed() {
+    document.querySelectorAll(".wip-sorter-section").forEach((sec) => {
+      if (!sec.__tierId) return;
+      const collapsed = isTierCollapsed(sec.__tierId);
+      sec.classList.toggle("wip-sorter-collapsed", collapsed);
+      if (sec.__toggleEl) {
+        sec.__toggleEl.setAttribute("aria-expanded", String(!collapsed));
+        sec.__toggleEl.setAttribute("aria-label", `${collapsed ? "Expand" : "Collapse"} section`);
+      }
+    });
+  }
+
+  // Makes `el` (the whole heading bar) the click/keyboard target for
+  // collapsing its tier, with a chevron that flips via CSS off aria-expanded.
+  function makeToggleable(el, tierId) {
+    el.classList.add("wip-sorter-heading-clickable");
+    el.setAttribute("role", "button");
+    el.tabIndex = 0;
+    const toggle = () => setTierCollapsed(tierId, !isTierCollapsed(tierId));
+    el.addEventListener("click", toggle);
+    el.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      toggle();
+    });
+    const chevron = document.createElement("span");
+    chevron.className = "wip-sorter-chevron";
+    chevron.setAttribute("aria-hidden", "true");
+    return chevron;
+  }
+
   function sectionFor(list, tierId) {
     list.__sections = list.__sections || {};
     let sec = list.__sections[tierId];
@@ -302,29 +355,42 @@
     const isTable = list.tagName.toLowerCase() === "tbody";
 
     let heading = null;
+    let toggleEl;
     if (isTable) {
-      const table = list.closest("table");
-      const cols =
-        (table && table.querySelectorAll("thead th").length) ||
-        (list.rows[0] && list.rows[0].cells.length) || 1;
       sec = document.createElement("tbody");
       const hr = document.createElement("tr");
       hr.className = "wip-sorter-header-row";
       const td = document.createElement("td");
-      td.colSpan = cols;
-      td.innerHTML = `<span class="wip-sorter-heading">${tier.label} <span class="wip-sorter-count"></span></span>`;
+      // Deliberately oversized: browsers clamp colspan to the row's real
+      // column count, so this always spans full width without needing to
+      // (fallibly) count columns ourselves.
+      td.colSpan = 1000;
+      const headingSpan = document.createElement("span");
+      headingSpan.className = "wip-sorter-heading";
+      const count = document.createElement("span");
+      count.className = "wip-sorter-count";
+      const chevron = makeToggleable(headingSpan, tierId);
+      headingSpan.append(`${tier.label} `, count, chevron);
+      td.appendChild(headingSpan);
       hr.appendChild(td);
       sec.appendChild(hr);
+      toggleEl = headingSpan;
     } else {
       heading = document.createElement("div");
       heading.className = `wip-sorter-heading wip-sorter-block-heading wip-sorter-heading-${tierId}`;
-      heading.innerHTML = `${tier.label} <span class="wip-sorter-count"></span>`;
+      const count = document.createElement("span");
+      count.className = "wip-sorter-count";
+      const chevron = makeToggleable(heading, tierId);
+      heading.append(`${tier.label} `, count, chevron);
       sec = document.createElement(list.tagName);
       sec.className = list.className;
+      toggleEl = heading;
     }
     sec.classList.add("wip-sorter-section", `wip-sorter-${tierId}`);
     sec.__heading = heading;
     sec.__list = list;
+    sec.__tierId = tierId;
+    sec.__toggleEl = toggleEl;
 
     // Insert after the last existing section that precedes this tier.
     let anchor = list;
@@ -351,6 +417,7 @@
       sec.style.display = hide ? "none" : "";
       if (sec.__heading) sec.__heading.style.display = hide ? "none" : "";
     });
+    applyTierCollapsed();
   }
 
   // Undo everything we did: move rows back to their original list, drop
@@ -374,9 +441,200 @@
     expandClicks.clear();
   }
 
+  // ---- Diff view: prev/next file navigation --------------------------------
+  //
+  // The PR diff tab renders a file tree (<ol class="files"><li class="file">
+  // <a href="#<path>">...) alongside the per-file diff blocks. Clicking one of
+  // those links is exactly what a user does to jump to a file, so navigation
+  // here just clicks through them in document order instead of reimplementing
+  // Bitbucket's own scroll/selection behaviour.
+
+  const FILE_LINK_SELECTOR = "ol.files li.file > a[href^='#']";
+  let fileNav = null; // { links, index, bar }
+
+  function buildFileNavBar() {
+    const bar = document.createElement("div");
+    bar.className = "wip-sorter-filenav";
+    const prev = document.createElement("button");
+    prev.type = "button";
+    prev.className = "wip-sorter-filenav-btn";
+    setTooltip(prev, "Previous file ( [ )");
+    prev.textContent = "◀";
+    const label = document.createElement("span");
+    label.className = "wip-sorter-filenav-label";
+    const next = document.createElement("button");
+    next.type = "button";
+    next.className = "wip-sorter-filenav-btn";
+    setTooltip(next, "Next file ( ] )");
+    next.textContent = "▶";
+    prev.addEventListener("click", () => stepFile(-1));
+    next.addEventListener("click", () => stepFile(1));
+
+    const divider = document.createElement("span");
+    divider.className = "wip-sorter-filenav-divider";
+    const collapseAll = document.createElement("button");
+    collapseAll.type = "button";
+    collapseAll.className = "wip-sorter-filenav-btn";
+    setTooltip(collapseAll, "Collapse all folders");
+    collapseAll.textContent = "⊟";
+    collapseAll.addEventListener("click", () => setAllDirectories(false));
+    const expandAll = document.createElement("button");
+    expandAll.type = "button";
+    expandAll.className = "wip-sorter-filenav-btn";
+    setTooltip(expandAll, "Expand all folders");
+    expandAll.textContent = "⊞";
+    expandAll.addEventListener("click", () => setAllDirectories(true));
+
+    bar.append(prev, label, next, divider, collapseAll, expandAll);
+    document.body.appendChild(bar);
+    return bar;
+  }
+
+  // Custom tooltip (data-tooltip + CSS) instead of the native `title`
+  // attribute, which is slow to appear and can't be restyled.
+  function setTooltip(el, text) {
+    el.dataset.tooltip = text;
+    el.setAttribute("aria-label", text);
+  }
+
+  // ---- Diff view: expand/collapse all sidebar folders ----------------------
+  //
+  // A closed directory node has no <ol class="files"> sibling at all (its
+  // children aren't in the DOM), so expanding must repeat in passes: each
+  // click can reveal previously-hidden nested directories.
+
+  const DIRECTORY_BUTTON_SELECTOR = "li.directory > button.directory-label";
+
+  function isDirectoryOpen(btn) {
+    return !!btn.querySelector(".icon-folder-opened");
+  }
+
+  function directoryDepth(btn) {
+    let depth = 0;
+    for (let el = btn.parentElement; el; el = el.parentElement) {
+      if (el.matches && el.matches("li.directory")) depth++;
+    }
+    return depth;
+  }
+
+  function setAllDirectories(open, passesLeft = 15) {
+    const btns = [...document.querySelectorAll(DIRECTORY_BUTTON_SELECTOR)].filter(
+      (btn) => isDirectoryOpen(btn) !== open
+    );
+    if (!btns.length || passesLeft <= 0) return;
+
+    if (!open) {
+      // Collapsing removes a directory's children from the DOM entirely, so
+      // click the deepest (innermost) directories first: otherwise closing an
+      // ancestor first can detach a still-open child before its own click
+      // fires, leaving it "open" in Bitbucket's internal state (it reappears
+      // open the next time that ancestor is expanded). Every open node is
+      // already attached at query time, so one depth-sorted pass is enough.
+      btns.sort((a, b) => directoryDepth(b) - directoryDepth(a));
+      btns.forEach((btn) => btn.click());
+      return;
+    }
+
+    btns.forEach((btn) => btn.click());
+    setTimeout(() => setAllDirectories(open, passesLeft - 1), 30);
+  }
+
+  function updateFileNavUI() {
+    if (!fileNav) return;
+    const { links, index, bar } = fileNav;
+    links.forEach((l, i) => l.classList.toggle("wip-sorter-filenav-active", i === index));
+    const label = bar.querySelector(".wip-sorter-filenav-label");
+    const current = links[index];
+    const name = current && current.querySelector(".file-label");
+    label.textContent = links.length ? `${index + 1} / ${links.length}${name ? " — " + text(name) : ""}` : "";
+  }
+
+  function stepFile(delta) {
+    if (!fileNav || !fileNav.links.length) return;
+    fileNav.index = (fileNav.index + delta + fileNav.links.length) % fileNav.links.length;
+    const link = fileNav.links[fileNav.index];
+    link.click();
+    link.scrollIntoView({ block: "nearest" });
+    updateFileNavUI();
+  }
+
+  function teardownFileNav() {
+    if (!fileNav) return;
+    fileNav.bar.remove();
+    fileNav = null;
+  }
+
+  function refreshFileNav() {
+    if (!SETTINGS.fileNav || !isSinglePrPage()) return teardownFileNav();
+
+    const links = [...document.querySelectorAll(FILE_LINK_SELECTOR)];
+    if (!links.length) return teardownFileNav();
+
+    links.forEach((link, i) => {
+      if (link.dataset.wipFilenavBound) return;
+      link.dataset.wipFilenavBound = "1";
+      link.addEventListener("click", () => {
+        fileNav.index = fileNav.links.indexOf(link);
+        updateFileNavUI();
+      });
+    });
+
+    if (!fileNav) fileNav = { links, index: 0, bar: buildFileNavBar() };
+    else {
+      fileNav.links = links;
+      if (fileNav.index >= links.length) fileNav.index = links.length - 1;
+    }
+    updateFileNavUI();
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (!fileNav || !fileNav.links.length) return;
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.key === "]") { stepFile(1); e.preventDefault(); }
+    else if (e.key === "[") { stepFile(-1); e.preventDefault(); }
+  });
+
+  // ---- Dashboard: whole-card click-through -----------------------------
+  //
+  // Clicking a row's empty space navigates to its PR, exactly like clicking
+  // its title link. Clicks on any actual link/button/control (avatars'
+  // popovers, review controls, the build-status link, etc.) are left alone.
+
+  const INTERACTIVE_SELECTOR =
+    "a, button, input, textarea, select, [role='button'], [contenteditable], [data-testid='reviewer-avatar']";
+
+  function cardNavHref(e) {
+    if (e.target.closest(INTERACTIVE_SELECTOR)) return null;
+    const row = e.target.closest(".wip-sorter-card-clickable");
+    return row ? row.dataset.wipCardHref : null;
+  }
+
+  document.addEventListener("click", (e) => {
+    const href = cardNavHref(e);
+    if (!href) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey) window.open(href, "_blank");
+    else window.location.assign(href);
+  });
+
+  // Middle-click also opens in a new tab.
+  document.addEventListener("auxclick", (e) => {
+    if (e.button !== 1) return;
+    const href = cardNavHref(e);
+    if (!href) return;
+    e.preventDefault();
+    window.open(href, "_blank");
+  });
+
   // ---- Core ---------------------------------------------------------------
 
   function sortOnce() {
+    // Tiering only applies to dashboard/list pages. A single PR's own page
+    // (overview/diff/commits/…) has tab and comment links that also match
+    // PR_LINK_SELECTOR, which would otherwise corrupt the diff/file view.
+    if (isSinglePrPage()) return;
+
     const seen = new Set();
 
     document.querySelectorAll(PR_LINK_SELECTOR).forEach((link) => {
@@ -387,6 +645,11 @@
 
       const title = titleOf(link);
       if (!title) return;
+
+      // Make the row's empty space clickable to the PR (links/buttons inside
+      // it still behave normally; see the delegated click handler below).
+      row.classList.add("wip-sorter-card-clickable");
+      row.dataset.wipCardHref = link.href;
 
       // Leave my own PRs and closed PRs alone.
       if (SKIP_SECTION_PATTERN.test(sectionTitleFor(row)) || isClosedRow(row)) {
@@ -430,6 +693,7 @@
     timer = setTimeout(() => {
       try {
         sortOnce();
+        refreshFileNav();
       } catch (e) {
         console.error("[better-stash] error:", e);
       }
@@ -469,8 +733,18 @@
     setTimeout(() => bootOnce({}), 1500);
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area !== "local") return;
+      const keys = Object.keys(changes);
+
+      // Collapse state is written by this same script (clicking a tier's
+      // toggle button); just re-apply it instead of a full re-sort.
+      if (keys.length === 1 && keys[0] === "collapsedTiers") {
+        SETTINGS.collapsedTiers = changes.collapsedTiers.newValue || {};
+        applyTierCollapsed();
+        return;
+      }
+
       const next = {};
-      Object.keys(changes).forEach((k) => (next[k] = changes[k].newValue));
+      keys.forEach((k) => (next[k] = changes[k].newValue));
       applySettings(next);
       resetAll();   // undo current tiering so every row is re-classified
       schedule();

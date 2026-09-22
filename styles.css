@@ -13,7 +13,7 @@
 }
 
 .wip-sorter-block-heading {
-  display: block;
+  display: flex;
   margin: 20px 0 6px;
   padding-top: 12px;
   border-top: 2px solid #dfe1e6;
@@ -73,4 +73,151 @@ html.wip-sorter-team-tint [role='row'].wip-sorter-team-row {
 
 html.wip-sorter-team-tint tr.wip-sorter-team-row:hover > td {
   background-color: rgba(29, 66, 138, 0.12);
+}
+
+/* Diff view: prev/next file navigation */
+.wip-sorter-filenav {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #172b4d;
+  color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(9, 30, 66, 0.35);
+  font: 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.wip-sorter-filenav-btn {
+  border: 0;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.wip-sorter-filenav-btn:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+/* Fast, styled tooltips (replaces the slow native `title` attribute) */
+.wip-sorter-filenav-btn {
+  position: relative;
+}
+
+.wip-sorter-filenav-btn::after,
+.wip-sorter-filenav-btn::before {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.08s ease, transform 0.08s ease;
+  transition-delay: 0.05s;
+  position: absolute;
+  left: 50%;
+  z-index: 10000;
+}
+
+.wip-sorter-filenav-btn::after {
+  content: attr(data-tooltip);
+  bottom: calc(100% + 9px);
+  transform: translate(-50%, 3px);
+  background: #0b1f3a;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(9, 30, 66, 0.5);
+}
+
+.wip-sorter-filenav-btn::before {
+  content: "";
+  bottom: calc(100% + 4px);
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #0b1f3a;
+}
+
+.wip-sorter-filenav-btn:hover::after,
+.wip-sorter-filenav-btn:hover::before,
+.wip-sorter-filenav-btn:focus-visible::after,
+.wip-sorter-filenav-btn:focus-visible::before {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.wip-sorter-filenav-label {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wip-sorter-filenav-divider {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+li.file > a.wip-sorter-filenav-active .file-label {
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+/* Dashboard: collapsible tier sections, whole heading bar is the toggle */
+.wip-sorter-heading-clickable {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  box-sizing: border-box;
+}
+
+.wip-sorter-heading-clickable:hover,
+.wip-sorter-heading-clickable:focus-visible {
+  background: rgba(9, 30, 66, 0.06);
+  outline: none;
+}
+
+.wip-sorter-chevron {
+  width: 7px;
+  height: 7px;
+  margin-left: auto;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.wip-sorter-heading-clickable[aria-expanded="false"] .wip-sorter-chevron {
+  transform: rotate(-45deg);
+}
+
+.wip-sorter-section.wip-sorter-collapsed > *:not(.wip-sorter-header-row) {
+  display: none;
+}
+
+/* Dashboard: whole-card click-through */
+.wip-sorter-card-clickable {
+  cursor: pointer;
+}
+
+tr.wip-sorter-card-clickable:hover > td,
+li.wip-sorter-card-clickable:hover,
+[role='row'].wip-sorter-card-clickable:hover {
+  background-color: rgba(9, 30, 66, 0.035);
 }
