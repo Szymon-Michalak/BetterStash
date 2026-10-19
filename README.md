@@ -64,12 +64,9 @@ See [PRIVACY.md](PRIVACY.md) for the complete privacy statement.
 - **Team members** — display names to highlight, badge, or pin in the review list.
 - **Auto-expand** — independently controls the review, personal, and recently closed sections.
 - **Sections** — enables or disables the Blocked, Approved, and WIP tiers and row dimming.
-- **Diff view** — enables a floating prev/next file control on a pull request's Diff tab, for
-  stepping through files in large PRs without hunting through the file tree (Bitbucket's own
-  `j`/`k` shortcut also works, unrelated to this button). It auto-expands any collapsed folder
-  needed to reach the next/previous file, and tracks whichever file is actually on screen so it
-  stays correct no matter how you got there. A small "1️⃣2️⃣3️⃣4️⃣" keycap hint on the
-  Overview/Diff/Commits/Builds tabs points out Bitbucket's native `1`–`4` tab-switch shortcut.
+- **Diff view** — on the Diff tab, the pull request header floats as a compact card in the bottom-right corner
+  (toggleable), giving the diff more vertical space. A small "1️⃣2️⃣3️⃣4️⃣" keycap hint on a pull request's Overview/Diff/Commits/Builds
+  tabs points out Bitbucket's native `1`–`4` tab-switch shortcut.
 - **Dashboard: Zen mode** — hides the sidebar and centers the main pull request list in a narrower
   column with generous side padding. A small floating toggle on the dashboard flips it on/off
   without opening settings; the state is remembered. Also toggleable with the `Z` key.

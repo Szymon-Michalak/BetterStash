@@ -15,7 +15,9 @@
     tierApproved: true,
     tierWip: true,
     dimRows: true,
-    fileNav: true,
+    prBar: true,
+    prBarOpacity: 50,
+    imageFit: true,
     zenMode: false,
     collapsedTiers: Object.freeze({}),
   });

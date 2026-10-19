@@ -137,101 +137,6 @@ html.wip-sorter-team-tint tr.wip-sorter-team-row:hover > td {
   background-color: rgba(29, 66, 138, 0.12);
 }
 
-.wip-sorter-filenav {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  background: #172b4d;
-  color: #fff;
-  border-radius: 6px;
-  box-shadow: 0 4px 14px rgba(9, 30, 66, 0.35);
-  font: 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
-
-.wip-sorter-filenav-btn {
-  position: relative;
-  border: 0;
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  border-radius: 4px;
-  width: 24px;
-  height: 24px;
-  line-height: 24px;
-  padding: 0;
-  cursor: pointer;
-  font: inherit;
-}
-
-.wip-sorter-filenav-btn:hover {
-  background: rgba(255, 255, 255, 0.24);
-}
-
-.wip-sorter-filenav-btn::after,
-.wip-sorter-filenav-btn::before {
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.08s ease, transform 0.08s ease;
-  transition-delay: 0.05s;
-  position: absolute;
-  right: 0;
-  z-index: 10000;
-}
-
-.wip-sorter-filenav-btn::after {
-  content: attr(data-tooltip);
-  bottom: calc(100% + 9px);
-  transform: translateY(3px);
-  background: #0b1f3a;
-  color: #fff;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  white-space: nowrap;
-  box-shadow: 0 4px 12px rgba(9, 30, 66, 0.5);
-}
-
-.wip-sorter-filenav-btn::before {
-  content: "";
-  bottom: calc(100% + 4px);
-  right: 8px;
-  transform: translateY(3px);
-  border: 5px solid transparent;
-  border-top-color: #0b1f3a;
-}
-
-.wip-sorter-filenav-btn:hover::after,
-.wip-sorter-filenav-btn:hover::before,
-.wip-sorter-filenav-btn:focus-visible::after,
-.wip-sorter-filenav-btn:focus-visible::before {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.wip-sorter-filenav-label {
-  max-width: 320px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.wip-sorter-filenav-divider {
-  width: 1px;
-  align-self: stretch;
-  background: rgba(255, 255, 255, 0.2);
-}
-
-li.file > a.wip-sorter-filenav-active .file-label {
-  font-weight: 700;
-  text-decoration: underline;
-}
-
 .wip-sorter-heading-clickable {
   display: flex;
   align-items: center;
@@ -441,4 +346,353 @@ html.wip-sorter-zen .wip-sorter-has-new-commits::after {
   font-size: 0.8em;
   font-weight: 400;
   opacity: 0.6;
+}
+
+/* Diff tab: the PR header becomes a compact two-row card floating bottom-right, freeing vertical space.
+   Row 1: title + Start review. Row 2: branches, state, reviewers, status, merge, more. */
+html.wip-sorter-prbar header.pull-request-header {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 500;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(640px, calc(100vw - 32px));
+  margin: 0;
+  padding: 8px 10px;
+  background: #172b4d;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  box-shadow: 0 8px 28px rgba(9, 30, 66, 0.55);
+  font-size: 12px;
+}
+
+/* Flatten the wrappers so every piece is a direct flex item and can be ordered freely. */
+html.wip-sorter-prbar .pull-request-header-bar,
+html.wip-sorter-prbar .pull-request-actions {
+  display: contents;
+}
+
+html.wip-sorter-prbar .pull-request-header-bar > [role="presentation"] {
+  display: none;
+}
+
+html.wip-sorter-prbar .pull-request-title-review-section {
+  order: -1;
+  display: flex;
+  flex: 1 0 100%;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 0 0 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+html.wip-sorter-prbar h2.pull-request-header-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #fff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html.wip-sorter-prbar h2.pull-request-header-title a {
+  color: #85b8ff;
+}
+
+html.wip-sorter-prbar .pull-request-header-review-button {
+  flex: none;
+  margin: 0;
+}
+
+html.wip-sorter-prbar .pull-request-metadata {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+}
+
+html.wip-sorter-prbar .branch-from-to {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+html.wip-sorter-prbar .branch-from-to .ref-lozenge {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Shrink the right-hand controls (avatars, buttons) rather than restyling Atlaskit's hashed classes. */
+html.wip-sorter-prbar .pull-request-reviewers,
+html.wip-sorter-prbar .reviewer-status-buttons,
+html.wip-sorter-prbar .merge-button-container,
+html.wip-sorter-prbar .pull-request-more-actions {
+  flex: none;
+  margin: 0;
+  padding: 0;
+  zoom: 0.78;
+}
+
+html.wip-sorter-prbar .pull-request-reviewers-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+html.wip-sorter-prbar .merge-button-container {
+  display: flex;
+  align-items: center;
+}
+
+/* Dark-theme the light Atlaskit chips; approve / veto buttons keep their semantic colors. */
+html.wip-sorter-prbar .ref-lozenge,
+html.wip-sorter-prbar .pull-request-state-lozenge > span {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+html.wip-sorter-prbar .ref-lozenge .ref-lozenge-content,
+html.wip-sorter-prbar .ref-lozenge span,
+html.wip-sorter-prbar .pull-request-state-lozenge span {
+  background: transparent;
+  color: #fff;
+}
+
+html.wip-sorter-prbar .arrow {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+html.wip-sorter-prbar .pull-request-header-review-button button,
+html.wip-sorter-prbar .pull-request-more-actions button,
+html.wip-sorter-prbar .status-button:not(.selected),
+html.wip-sorter-prbar .merge-button,
+html.wip-sorter-prbar .reviewers-group button {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+html.wip-sorter-prbar .pull-request-header-review-button button *,
+html.wip-sorter-prbar .pull-request-more-actions button *,
+html.wip-sorter-prbar .status-button:not(.selected) *,
+html.wip-sorter-prbar .merge-button *,
+html.wip-sorter-prbar .reviewers-group button * {
+  color: inherit;
+}
+
+html.wip-sorter-prbar .pull-request-header-review-button button:hover,
+html.wip-sorter-prbar .pull-request-more-actions button:hover,
+html.wip-sorter-prbar .status-button:not(.selected):hover,
+html.wip-sorter-prbar .reviewers-group button:hover {
+  background: rgba(255, 255, 255, 0.26);
+}
+
+html.wip-sorter-prbar .pull-request-state-lozenge {
+  color: #fff;
+}
+
+html.wip-sorter-prbar .merge-button:disabled {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Replaces Bitbucket's inline "100vh - header" height; the variable is measured in diff.js. */
+html.wip-sorter-prbar .pull-request-tabs .tabs-pane.active-pane > div {
+  height: calc(100vh - var(--wip-sorter-pane-top, 150px)) !important;
+}
+
+/* Action buttons: solid, high-contrast colors and one shared height. */
+html.wip-sorter-prbar .pull-request-header-review-button button,
+html.wip-sorter-prbar .pull-request-more-actions button {
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #fff !important;
+}
+
+html.wip-sorter-prbar .pull-request-header-review-button button {
+  background: #0c66e4 !important;
+  font-weight: 600;
+}
+
+html.wip-sorter-prbar .pull-request-header-review-button button:hover,
+html.wip-sorter-prbar .pull-request-more-actions button:hover {
+  filter: brightness(1.15);
+}
+
+html.wip-sorter-prbar .pull-request-header-review-button button *,
+html.wip-sorter-prbar .pull-request-more-actions button * {
+  opacity: 1 !important;
+  color: #fff !important;
+}
+
+html.wip-sorter-prbar .status-button,
+html.wip-sorter-prbar .merge-button,
+html.wip-sorter-prbar .vetoes-button {
+  box-sizing: border-box;
+  height: 32px !important;
+  opacity: 1 !important;
+}
+
+html.wip-sorter-prbar .status-button.needs-work {
+  background: rgba(255, 171, 0, 0.25) !important;
+  color: #ffc400 !important;
+}
+
+html.wip-sorter-prbar .status-button.needs-work.selected {
+  background: #ff991f !important;
+  color: #172b4d !important;
+}
+
+html.wip-sorter-prbar .status-button.approve {
+  background: rgba(54, 179, 126, 0.28) !important;
+  color: #57d9a3 !important;
+}
+
+html.wip-sorter-prbar .status-button.approve.selected {
+  background: #36b37e !important;
+  color: #fff !important;
+}
+
+html.wip-sorter-prbar .status-button.needs-work *,
+html.wip-sorter-prbar .status-button.approve * {
+  color: inherit !important;
+}
+
+html.wip-sorter-prbar .pull-request-state-lozenge > span {
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: #0c66e4;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+/* Uniform control size across status, veto, merge and more buttons. */
+html.wip-sorter-prbar .reviewer-status-buttons-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+html.wip-sorter-prbar .status-button-wrapper,
+html.wip-sorter-prbar .status-button-wrapper > [role="presentation"],
+html.wip-sorter-prbar .vetoes-button-container,
+html.wip-sorter-prbar .vetoes-button-container > [role="presentation"] {
+  display: flex;
+  align-items: center;
+}
+
+html.wip-sorter-prbar .status-button,
+html.wip-sorter-prbar .vetoes-button,
+html.wip-sorter-prbar .merge-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px !important;
+  min-width: 36px;
+  margin: 0;
+  padding: 0 8px;
+  line-height: 1;
+}
+
+html.wip-sorter-prbar .status-button > span {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+}
+
+html.wip-sorter-prbar .status-button svg,
+html.wip-sorter-prbar .vetoes-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Fade the whole card until the pointer or keyboard focus is on it. */
+html.wip-sorter-prbar header.pull-request-header {
+  opacity: var(--wip-sorter-prbar-opacity, 0.5);
+  transition: opacity 0.15s ease;
+}
+
+html.wip-sorter-prbar header.pull-request-header:hover,
+html.wip-sorter-prbar header.pull-request-header:focus-within {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.wip-sorter-prbar header.pull-request-header {
+    transition: none;
+  }
+}
+
+/* Image diffs: cap images near the visible height; the mode switcher floats over the picture (takes no
+   space) and fades until hovered. Bottom padding lets you scroll the last bit clear of the PR card. */
+html.wip-sorter-imgfit .diff-image {
+  padding-top: 36px;
+  padding-bottom: 110px;
+}
+
+html.wip-sorter-imgfit .diff-image img,
+html.wip-sorter-imgfit .diff-image canvas {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: calc(var(--wip-sorter-diff-h, 100vh) - 70px);
+  object-fit: contain;
+}
+
+html.wip-sorter-imgfit .diff-image .diff-modes-buttons {
+  position: sticky;
+  top: 8px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: max-content;
+  height: 0;
+  margin: -28px 12px 0 auto;
+  overflow: visible;
+  opacity: 0.45;
+  transition: opacity 0.15s ease;
+}
+
+html.wip-sorter-imgfit .diff-image .diff-modes-buttons > span {
+  position: relative;
+  display: block;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 4px rgba(9, 30, 66, 0.25);
+}
+
+html.wip-sorter-imgfit .diff-image .diff-modes-buttons > span > button {
+  width: 100%;
+  text-align: left;
+}
+
+/* Collapsed: only the current mode shows; hovering (or keyboard focus) reveals the others. */
+html.wip-sorter-imgfit .diff-image .diff-modes-buttons.wip-sorter-modes-collapsible:not(:hover):not(:focus-within) > span:not(.wip-sorter-mode-active) {
+  display: none;
+}
+
+html.wip-sorter-imgfit .diff-image .diff-modes-buttons:hover,
+html.wip-sorter-imgfit .diff-image .diff-modes-buttons:focus-within {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.wip-sorter-imgfit .diff-image .diff-modes-buttons {
+    transition: none;
+  }
 }

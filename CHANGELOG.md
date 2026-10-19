@@ -2,6 +2,19 @@
 
 All notable changes are documented here. This project follows [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+- Added: image diffs on the Diff tab are fitted to the visible height (no more scrolling through tall
+  snapshots), and the Side-by-side/Blend/Split/Pixel-diff switcher stays pinned and fades until hovered.
+  Toggle: "Fit image diffs".
+
+- Added: on a pull request's Diff tab the PR header (branches, state, reviewers, approve/needs-work,
+  merge, more actions, title, Start review) collapses into a compact card in the bottom-right corner
+  and the diff pane grows to fill the space. Toggle: "Compact pull request header".
+
+- Removed: the floating prev/next file navigation, folder expand/collapse buttons and the
+  `fileNav` setting; Bitbucket's native shortcuts cover this.
+
 ## 1.3.0 - 2026-09-22
 
 - Fixed: tiering no longer relocates PR rows into newly-created containers. Bitbucket's

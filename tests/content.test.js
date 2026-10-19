@@ -168,24 +168,38 @@ test("zen mode moves the same status node and restores its exact position and co
   assert.equal(document.querySelector("th").colSpan, 6);
 });
 
-const diffHTML = `<ol class="files"><li class="file"><a href="#one"><span class="file-label">one.js</span></a></li>
-  <li class="file"><a href="#two"><span class="file-label">two.js</span></a></li></ol><div id="one"></div><div id="two"></div>`;
-const diffPath = "/projects/APP/repos/demo/pull-requests/1/diff";
+test("compact PR header only applies on the diff tab and can be disabled", (t) => {
+  const html = '<header class="pull-request-header"></header><div class="pull-request-tabs"><div class="tabs-pane active-pane"><div></div></div></div>';
+  const on = page(t, html, {}, "/projects/APP/repos/demo/pull-requests/1/diff");
+  on.diff.refresh();
+  assert.ok(on.document.documentElement.classList.contains("wip-sorter-prbar"));
+  on.settings.prBar = false;
+  on.diff.refresh();
+  assert.ok(!on.document.documentElement.classList.contains("wip-sorter-prbar"));
+  const overview = page(t, html, {}, "/projects/APP/repos/demo/pull-requests/1/overview");
+  overview.diff.refresh();
+  assert.ok(!overview.document.documentElement.classList.contains("wip-sorter-prbar"));
+});
 
-test("file navigation wraps, tears down safely, and can be enabled again", (t) => {
-  const { document, diff, settings } = page(t, diffHTML, {}, diffPath);
+test("image diffs get the fit class only on the diff tab and when enabled", (t) => {
+  const html = '<div class="diff-view"><div class="diff-image"></div></div>';
+  const on = page(t, html, {}, "/projects/APP/repos/demo/pull-requests/1/diff");
+  on.diff.refresh();
+  assert.ok(on.document.documentElement.classList.contains("wip-sorter-imgfit"));
+  on.settings.imageFit = false;
+  on.diff.refresh();
+  assert.ok(!on.document.documentElement.classList.contains("wip-sorter-imgfit"));
+});
+
+test("image mode switcher marks the one selected mode", (t) => {
+  const btn = (cls) => `<span role="presentation"><button class="${cls}">x</button></span>`;
+  const html = `<div class="diff-view"><div class="diff-image"><div class="diff-modes-buttons">${btn("a")}${btn("b")}${btn("b")}${btn("b")}</div></div></div>`;
+  const { document, diff } = page(t, html, {}, "/projects/APP/repos/demo/pull-requests/1/diff");
   diff.refresh();
-  document.querySelector('[aria-label="Previous file (k)"]').click();
-  assert.equal(document.querySelector(".wip-sorter-filenav-label").textContent, "2 / 2 — two.js");
-  document.querySelector('[aria-label="Next file (j)"]').click();
-  assert.equal(document.querySelector(".wip-sorter-filenav-label").textContent, "1 / 2 — one.js");
-  settings.fileNav = false;
-  diff.refresh();
-  assert.equal(document.querySelector(".wip-sorter-filenav"), null);
-  document.querySelector('a[href="#two"]').click();
-  settings.fileNav = true;
-  diff.refresh();
-  assert.equal(document.querySelectorAll(".wip-sorter-filenav").length, 1);
+  const active = document.querySelectorAll(".wip-sorter-mode-active");
+  assert.equal(active.length, 1);
+  assert.equal(active[0].firstElementChild.className, "a");
+  assert.ok(document.querySelector(".diff-modes-buttons").classList.contains("wip-sorter-modes-collapsible"));
 });
 
 test("startup and live settings settle without a refresh loop", async (t) => {
@@ -198,9 +212,6 @@ test("startup and live settings settle without a refresh loop", async (t) => {
   app.change({ tierWip: undefined });
   await app.settle();
   assert.equal(app.document.querySelectorAll("[data-wip-heading]").length, 1);
-  const diff = page(t, diffHTML, {}, diffPath, true);
-  await diff.settle();
-  assert.equal(diff.document.querySelectorAll(".wip-sorter-filenav").length, 1);
 });
 
 test("list headings stay ordered when tiers appear later", (t) => {
@@ -242,21 +253,3 @@ test("empty state stays visible even when every tier below it is collapsed", (t)
   assert.equal(empty().classList.contains("wip-sorter-row-hidden"), false, "not hidden just because tiers are collapsed");
 });
 
-test("folder collapse closes children first, and pending navigation tolerates disabling", async (t) => {
-  const app = page(t, `<ol class="files"><li class="directory"><button class="directory-label" id="outer"><span class="icon-folder-opened"></span></button>
-    <ol class="files"><li class="directory"><button class="directory-label" id="inner"><span class="icon-folder-opened"></span></button></li></ol>
-    </li>${diffHTML}</ol>`, {}, diffPath);
-  const clicks = [];
-  app.document.querySelectorAll("button.directory-label").forEach((button) => button.addEventListener("click", () => {
-    clicks.push(button.id);
-    button.firstElementChild.classList.toggle("icon-folder-opened");
-  }));
-  app.diff.refresh();
-  app.document.querySelector('[aria-label="Collapse all folders"]').click();
-  assert.deepEqual(clicks, ["inner", "outer"]);
-  app.document.querySelector('[aria-label="Next file (j)"]').click();
-  app.settings.fileNav = false;
-  app.diff.refresh();
-  await app.settle(30);
-  assert.equal(app.document.querySelector(".wip-sorter-filenav"), null);
-});

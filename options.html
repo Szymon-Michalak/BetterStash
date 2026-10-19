@@ -70,6 +70,7 @@
       border-radius: 4px;
     }
     label.row:hover { background: rgba(7, 71, 166, 0.06); }
+    label.row input[type=range] { width: 140px; height: auto; }
     label.row input { margin: 0; accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
     .field label { display: block; margin-bottom: 4px; color: var(--muted); font-weight: 600; }
     .field input[type=text] {
@@ -165,7 +166,9 @@
 
   <section class="card">
     <h2>Diff view</h2>
-    <label class="row"><input type="checkbox" id="fileNav"> Prev/next file navigation (buttons + <code>[</code> / <code>]</code>)</label>
+    <label class="row"><input type="checkbox" id="prBar"> Compact pull request header (floats bottom-right on the Diff tab)</label>
+    <label class="row"><span>Idle opacity</span> <input type="range" id="prBarOpacity" min="20" max="100" step="5"> <span class="hint">fades in on hover</span></label>
+    <label class="row"><input type="checkbox" id="imageFit"> Fit image diffs (e.g. snapshots) to the screen height, with a sticky mode switcher</label>
   </section>
 
   <section class="card">
