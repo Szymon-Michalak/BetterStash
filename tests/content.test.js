@@ -66,7 +66,10 @@ function page(t, html, saved = {}, path = "/dashboard", boot = false) {
   };
 }
 
-const order = (document) => [...document.querySelector("tbody").children].map((el) => el.id || el.dataset.wipHeading);
+const order = (document) => [...document.querySelector("tbody").children]
+  .filter((el) => !el.dataset.wipEmpty)
+  .map((el) => el.id || el.dataset.wipHeading);
+
 
 test("groups in display order while preserving classification priority and original parents", (t) => {
   const { document, dashboard } = page(t, section(
@@ -209,6 +212,34 @@ test("list headings stay ordered when tiers appear later", (t) => {
   dashboard.refresh();
   assert.deepEqual([...list.children].map((el) => el.id || el.dataset.wipHeading), ["m", "blocked", "b", "wip", "w", "approved", "a"]);
   assert.equal(document.querySelectorAll("li[role='button']").length, 3);
+});
+
+test("shows a friendly empty state once every PR is sorted into a tier, and removes it once something is unsorted again", (t) => {
+  const { document, dashboard } = page(t, section(row("w1", "WIP task") + row("b2", "Blocked", conflict)));
+  dashboard.refresh();
+  const empty = document.querySelector("[data-wip-empty]");
+  assert.ok(empty, "empty state renders once nothing is left unsorted");
+  assert.ok(empty.textContent.trim().length > 0, "empty state has a message");
+  assert.equal(document.querySelector("tbody").firstElementChild, empty, "empty state leads the list");
+
+  document.querySelector('tbody').insertAdjacentHTML("afterbegin", row("m3", "Needs review"));
+  dashboard.refresh();
+  assert.equal(document.querySelectorAll("[data-wip-empty]").length, 0, "empty state clears once a PR is unsorted");
+
+  document.getElementById("m3").remove();
+  dashboard.refresh();
+  assert.ok(document.querySelector("[data-wip-empty]"), "empty state comes back once everything is sorted again");
+});
+
+test("empty state stays visible even when every tier below it is collapsed", (t) => {
+  const { document, dashboard } = page(t, section(row("w1", "WIP task") + row("b2", "Blocked", conflict)));
+  dashboard.refresh();
+  const empty = () => document.querySelector("[data-wip-empty]");
+  assert.equal(empty().classList.contains("wip-sorter-row-hidden"), false, "visible while a tier is expanded");
+
+  document.querySelectorAll("[data-wip-heading] [role='button']").forEach((toggle) => toggle.click());
+  assert.ok(empty(), "still present once every tier is collapsed");
+  assert.equal(empty().classList.contains("wip-sorter-row-hidden"), false, "not hidden just because tiers are collapsed");
 });
 
 test("folder collapse closes children first, and pending navigation tolerates disabling", async (t) => {

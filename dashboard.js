@@ -248,6 +248,77 @@ BetterStash.createDashboard = function (settings, layout) {
     chevron.setAttribute("aria-hidden", "true");
     return chevron;
   }
+  const EMPTY_MESSAGES = [
+    "🎉 All caught up! Nothing left to review.",
+    "✨ Nothing waiting on you — nice work!",
+    "🙌 Inbox zero. Go enjoy the quiet.",
+  ];
+
+  function nativeRowPadding(list) {
+    const sampleRow = [...list.children].find(
+      (child) => child.hasAttribute(MARK) && child.getAttribute(MARK) !== "skip"
+    );
+    const cell = sampleRow && (sampleRow.querySelector(".summary-column") || sampleRow.querySelector("td") || sampleRow.firstElementChild);
+    if (!cell || typeof getComputedStyle !== "function") return null;
+    const style = getComputedStyle(cell);
+    return style && style.paddingTop && style.paddingBottom ? { top: style.paddingTop, bottom: style.paddingBottom } : null;
+  }
+
+  // Extra breathing room (beyond a normal row's padding) so the banner reads as a
+  // deliberate, calm pause rather than just another row in the list.
+  const EXTRA_PADDING_PX = 20;
+
+  function addPadding(value, extra) {
+    const num = parseFloat(value);
+    return Number.isFinite(num) ? `${num + extra}px` : value;
+  }
+
+  function getOrCreateEmptyState(list) {
+    const existing = list.querySelector(":scope > [data-wip-empty]");
+    if (existing) return existing;
+    const isTable = list.tagName === "TBODY";
+    const el = document.createElement(isTable ? "tr" : /^(UL|OL)$/.test(list.tagName) ? "li" : "div");
+    el.dataset.wipEmpty = "1";
+    el.classList.add("wip-sorter-empty-state");
+    const message = document.createElement(isTable ? "td" : "div");
+    message.className = "wip-sorter-empty-state-message";
+    message.textContent = EMPTY_MESSAGES[Math.floor(Math.random() * EMPTY_MESSAGES.length)];
+    if (isTable) message.colSpan = 1000;
+    // Mirror a real row's vertical padding (plus a bit extra for prominence) instead
+    // of a guessed value, so the banner scales with the page's theme but still
+    // stands out more than an ordinary row.
+    const padding = nativeRowPadding(list);
+    if (padding) {
+      message.style.paddingTop = addPadding(padding.top, EXTRA_PADDING_PX);
+      message.style.paddingBottom = addPadding(padding.bottom, EXTRA_PADDING_PX);
+    }
+    el.append(message);
+    list.insertBefore(el, list.firstChild);
+    return el;
+  }
+
+  function updateEmptyStates() {
+    const lists = new Map();
+    document.querySelectorAll(`[${MARK}]`).forEach((row) => {
+      const mark = row.getAttribute(MARK);
+      if (mark === "skip") return;
+      const list = row.parentElement;
+      if (!list) return;
+      const stat = lists.get(list) || { total: 0, unsorted: 0 };
+      stat.total += 1;
+      if (mark === "main") stat.unsorted += 1;
+      lists.set(list, stat);
+    });
+    document.querySelectorAll("[data-wip-empty]").forEach((el) => {
+      const list = el.parentElement;
+      const stat = list && lists.get(list);
+      if (!stat || stat.unsorted > 0) el.remove();
+    });
+    lists.forEach((stat, list) => {
+      if (stat.total > 0 && stat.unsorted === 0) getOrCreateEmptyState(list);
+    });
+  }
+
   // Keep rows in Bitbucket's original parent so React can still reconcile them.
   function getOrCreateHeading(list, tierId) {
     const existing = list.querySelector(`:scope > [data-wip-heading="${tierId}"]`);
@@ -316,20 +387,33 @@ BetterStash.createDashboard = function (settings, layout) {
   }
 
   function refreshCounts() {
+    const lists = new Set();
     document.querySelectorAll("[data-wip-heading]").forEach((heading) => {
       const count = [...heading.parentElement.children].filter((row) =>
         row.getAttribute(MARK) === heading.dataset.wipHeading).length;
       if (!count) heading.remove();
       else {
+        lists.add(heading.parentElement);
         const label = heading.querySelector(".wip-sorter-count");
         if (label.textContent !== `(${count})`) label.textContent = `(${count})`;
       }
+    });
+    // When every row lands in a tier, the topmost heading has no unsorted row above it
+    // to separate from; drop its separator styling so it doesn't sit awkwardly under
+    // the table/list header. Insert the empty-state banner first so it counts as the
+    // preceding row once there truly is nothing left unsorted.
+    updateEmptyStates();
+    lists.forEach((list) => {
+      list.querySelectorAll(":scope > [data-wip-heading]").forEach((heading) => {
+        heading.classList.toggle("wip-sorter-heading-first", heading === list.firstElementChild);
+      });
     });
     applyTierCollapsed();
   }
 
   function resetAll() {
     document.querySelectorAll(".wip-sorter-section-heading").forEach((heading) => heading.remove());
+    document.querySelectorAll("[data-wip-empty]").forEach((el) => el.remove());
     document.querySelectorAll(`[${MARK}]`).forEach((row) => {
       row.removeAttribute(MARK);
       row.classList.remove(

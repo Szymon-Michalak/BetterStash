@@ -26,6 +26,45 @@ tr.wip-sorter-header-row td {
   background: transparent;
 }
 
+/* When a tier heading is the very first row/block (e.g. every PR ended up sorted
+   into a tier), it has no unsorted item above it to separate from, so drop the
+   separator so it doesn't leave an odd gap/double border under the header. */
+.wip-sorter-block-heading.wip-sorter-heading-first {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+tr.wip-sorter-header-row.wip-sorter-heading-first td {
+  padding-top: 6px;
+  border-top: none;
+}
+
+/* The banner is always inserted as the very first row/block, so it gets the
+   same "no separator above it" treatment as a first heading, and the same
+   padding rhythm as a normal row/heading rather than a bespoke callout. */
+tr.wip-sorter-empty-state td {
+  padding: 16px 8px 6px;
+  border-top: none;
+  background: transparent;
+}
+
+.wip-sorter-empty-state-message {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 400;
+  color: #6b778c;
+}
+
+
+
+div.wip-sorter-empty-state,
+li.wip-sorter-empty-state {
+  margin: 12px 0 6px;
+  border-top: none;
+  padding-top: 0;
+}
+
 .wip-sorter-heading-blocked { color: #de350b; }
 .wip-sorter-heading-approved { color: #00875a; }
 
@@ -44,7 +83,8 @@ tr.wip-sorter-header-row td {
   opacity: 1;
 }
 
-.wip-sorter-section-heading {
+.wip-sorter-section-heading,
+.wip-sorter-empty-state {
   animation: wip-sorter-fade-in 0.25s ease;
 }
 
@@ -57,7 +97,8 @@ tr.wip-sorter-header-row td {
   .wip-sorter-row,
   .wip-sorter-row-approved,
   .wip-sorter-row-wip,
-  .wip-sorter-section-heading {
+  .wip-sorter-section-heading,
+  .wip-sorter-empty-state {
     transition: none;
     animation: none;
   }
@@ -225,6 +266,16 @@ li.file > a.wip-sorter-filenav-active .file-label {
 
 .wip-sorter-row-hidden {
   display: none;
+}
+
+/* Hiding every data row with display:none strips the table of any cell that
+   still defines the summary column's width, so the header cells (e.g.
+   Reviewers/Builds) collapse leftward and overlap the section title above.
+   visibility:collapse hides table rows the same way but keeps their cells
+   contributing to column width calculations, so the header stays put. */
+tr.wip-sorter-row-hidden {
+  display: table-row;
+  visibility: collapse;
 }
 
 .wip-sorter-card-clickable {
