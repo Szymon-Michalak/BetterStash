@@ -381,16 +381,16 @@ html.wip-sorter-prbar header.pull-request-header {
 }
 
 /* Flatten the wrappers so every piece is a direct flex item and can be ordered freely. */
-html.wip-sorter-prbar .pull-request-header-bar,
-html.wip-sorter-prbar .pull-request-actions {
+html.wip-sorter-prbar header.pull-request-header .pull-request-header-bar,
+html.wip-sorter-prbar header.pull-request-header .pull-request-actions {
   display: contents;
 }
 
-html.wip-sorter-prbar .pull-request-header-bar > [role="presentation"] {
+html.wip-sorter-prbar header.pull-request-header .pull-request-header-bar > [role="presentation"] {
   display: none;
 }
 
-html.wip-sorter-prbar .pull-request-title-review-section {
+html.wip-sorter-prbar header.pull-request-header .pull-request-title-review-section {
   order: -2;
   display: flex;
   flex: 1 1 0;
@@ -409,7 +409,7 @@ html.wip-sorter-prbar header.pull-request-header::before {
   background: rgba(255, 255, 255, 0.16);
 }
 
-html.wip-sorter-prbar h2.pull-request-header-title {
+html.wip-sorter-prbar header.pull-request-header h2.pull-request-header-title {
   flex: 1 1 auto;
   min-width: 0;
   margin: 0;
@@ -422,20 +422,20 @@ html.wip-sorter-prbar h2.pull-request-header-title {
   white-space: nowrap;
 }
 
-html.wip-sorter-prbar h2.pull-request-header-title a {
+html.wip-sorter-prbar header.pull-request-header h2.pull-request-header-title a {
   color: #85b8ff;
 }
 
-html.wip-sorter-prbar .pull-request-header-review-button {
+html.wip-sorter-prbar header.pull-request-header .pull-request-header-review-button {
   flex: none;
   margin: 0;
 }
 
-html.wip-sorter-prbar .wip-sorter-tasks-none {
+html.wip-sorter-prbar header.pull-request-header .wip-sorter-tasks-none {
   display: none !important;
 }
 
-html.wip-sorter-prbar .wip-sorter-tasks {
+html.wip-sorter-prbar header.pull-request-header .wip-sorter-tasks {
   flex: none;
   margin: 0;
   color: #fff;
@@ -443,7 +443,7 @@ html.wip-sorter-prbar .wip-sorter-tasks {
   white-space: nowrap;
 }
 
-html.wip-sorter-prbar .pull-request-metadata {
+html.wip-sorter-prbar header.pull-request-header .pull-request-metadata {
   display: flex;
   flex: 0 1 auto;
   align-items: center;
@@ -452,14 +452,14 @@ html.wip-sorter-prbar .pull-request-metadata {
   margin: 0;
 }
 
-html.wip-sorter-prbar .branch-from-to {
+html.wip-sorter-prbar header.pull-request-header .branch-from-to {
   display: flex;
   align-items: center;
   gap: 4px;
   min-width: 0;
 }
 
-html.wip-sorter-prbar .branch-from-to .ref-lozenge {
+html.wip-sorter-prbar header.pull-request-header .branch-from-to .ref-lozenge {
   max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -467,79 +467,85 @@ html.wip-sorter-prbar .branch-from-to .ref-lozenge {
 }
 
 /* Shrink the right-hand controls (avatars, buttons) rather than restyling Atlaskit's hashed classes. */
-html.wip-sorter-prbar .pull-request-reviewers-list,
-html.wip-sorter-prbar .reviewer-status-buttons,
-html.wip-sorter-prbar .merge-button-container,
-html.wip-sorter-prbar .pull-request-more-actions {
+html.wip-sorter-prbar header.pull-request-header .pull-request-reviewers-list,
+html.wip-sorter-prbar header.pull-request-header .reviewer-status-buttons {
   flex: none;
   margin: 0;
   padding: 0;
   zoom: 0.78;
 }
 
+/* Merge / more-actions are sized directly (no zoom) because zoom misplaces their dropdown menus. */
+html.wip-sorter-prbar header.pull-request-header .merge-button-container,
+html.wip-sorter-prbar header.pull-request-header .pull-request-more-actions {
+  flex: none;
+  margin: 0;
+  padding: 0;
+}
+
 /* Flatten so the status buttons can move up next to Start review. */
-html.wip-sorter-prbar .pull-request-reviewers {
+html.wip-sorter-prbar header.pull-request-header .pull-request-reviewers {
   display: contents;
 }
 
-html.wip-sorter-prbar .pull-request-reviewers-list {
+html.wip-sorter-prbar header.pull-request-header .pull-request-reviewers-list {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-html.wip-sorter-prbar .merge-button-container {
+html.wip-sorter-prbar header.pull-request-header .merge-button-container {
   display: flex;
   align-items: center;
 }
 
 /* Dark-theme the light Atlaskit chips; approve / veto buttons keep their semantic colors. */
-html.wip-sorter-prbar .ref-lozenge,
-html.wip-sorter-prbar .pull-request-state-lozenge > span {
+html.wip-sorter-prbar header.pull-request-header .ref-lozenge,
+html.wip-sorter-prbar header.pull-request-header .pull-request-state-lozenge > span {
   background: rgba(255, 255, 255, 0.14);
   color: #fff;
 }
 
-html.wip-sorter-prbar .ref-lozenge .ref-lozenge-content,
-html.wip-sorter-prbar .ref-lozenge span,
-html.wip-sorter-prbar .pull-request-state-lozenge span {
+html.wip-sorter-prbar header.pull-request-header .ref-lozenge .ref-lozenge-content,
+html.wip-sorter-prbar header.pull-request-header .ref-lozenge span,
+html.wip-sorter-prbar header.pull-request-header .pull-request-state-lozenge span {
   background: transparent;
   color: #fff;
 }
 
-html.wip-sorter-prbar .arrow {
+html.wip-sorter-prbar header.pull-request-header .arrow {
   color: rgba(255, 255, 255, 0.7);
 }
 
-html.wip-sorter-prbar .pull-request-header-review-button button,
-html.wip-sorter-prbar .pull-request-more-actions button,
-html.wip-sorter-prbar .status-button:not(.selected),
-html.wip-sorter-prbar .merge-button,
-html.wip-sorter-prbar .reviewers-group button {
+html.wip-sorter-prbar header.pull-request-header .pull-request-header-review-button button,
+html.wip-sorter-prbar header.pull-request-header .pull-request-more-actions button,
+html.wip-sorter-prbar header.pull-request-header .status-button:not(.selected),
+html.wip-sorter-prbar header.pull-request-header .merge-button,
+html.wip-sorter-prbar header.pull-request-header .reviewers-group button {
   background: rgba(255, 255, 255, 0.14);
   color: #fff;
 }
 
-html.wip-sorter-prbar .pull-request-header-review-button button *,
-html.wip-sorter-prbar .pull-request-more-actions button *,
-html.wip-sorter-prbar .status-button:not(.selected) *,
-html.wip-sorter-prbar .merge-button *,
-html.wip-sorter-prbar .reviewers-group button * {
+html.wip-sorter-prbar header.pull-request-header .pull-request-header-review-button button *,
+html.wip-sorter-prbar header.pull-request-header .pull-request-more-actions button *,
+html.wip-sorter-prbar header.pull-request-header .status-button:not(.selected) *,
+html.wip-sorter-prbar header.pull-request-header .merge-button *,
+html.wip-sorter-prbar header.pull-request-header .reviewers-group button * {
   color: inherit;
 }
 
-html.wip-sorter-prbar .pull-request-header-review-button button:hover,
-html.wip-sorter-prbar .pull-request-more-actions button:hover,
-html.wip-sorter-prbar .status-button:not(.selected):hover,
-html.wip-sorter-prbar .reviewers-group button:hover {
+html.wip-sorter-prbar header.pull-request-header .pull-request-header-review-button button:hover,
+html.wip-sorter-prbar header.pull-request-header .pull-request-more-actions button:hover,
+html.wip-sorter-prbar header.pull-request-header .status-button:not(.selected):hover,
+html.wip-sorter-prbar header.pull-request-header .reviewers-group button:hover {
   background: rgba(255, 255, 255, 0.26);
 }
 
-html.wip-sorter-prbar .pull-request-state-lozenge {
+html.wip-sorter-prbar header.pull-request-header .pull-request-state-lozenge {
   color: #fff;
 }
 
-html.wip-sorter-prbar .merge-button:disabled {
+html.wip-sorter-prbar header.pull-request-header .merge-button:disabled {
   color: rgba(255, 255, 255, 0.5);
 }
 
@@ -549,63 +555,63 @@ html.wip-sorter-prbar-diff .pull-request-tabs .tabs-pane.active-pane > div {
 }
 
 /* Action buttons: solid, high-contrast colors and one shared height. */
-html.wip-sorter-prbar .pull-request-header-review-button button,
-html.wip-sorter-prbar .pull-request-more-actions button {
+html.wip-sorter-prbar header.pull-request-header .pull-request-header-review-button button,
+html.wip-sorter-prbar header.pull-request-header .pull-request-more-actions button {
   opacity: 1 !important;
   background: rgba(255, 255, 255, 0.2) !important;
   color: #fff !important;
 }
 
-html.wip-sorter-prbar .pull-request-header-review-button button {
+html.wip-sorter-prbar header.pull-request-header .pull-request-header-review-button button {
   background: #0c66e4 !important;
   font-weight: 600;
 }
 
-html.wip-sorter-prbar .pull-request-header-review-button button:hover,
-html.wip-sorter-prbar .pull-request-more-actions button:hover {
+html.wip-sorter-prbar header.pull-request-header .pull-request-header-review-button button:hover,
+html.wip-sorter-prbar header.pull-request-header .pull-request-more-actions button:hover {
   filter: brightness(1.15);
 }
 
-html.wip-sorter-prbar .pull-request-header-review-button button *,
-html.wip-sorter-prbar .pull-request-more-actions button * {
+html.wip-sorter-prbar header.pull-request-header .pull-request-header-review-button button *,
+html.wip-sorter-prbar header.pull-request-header .pull-request-more-actions button * {
   opacity: 1 !important;
   color: #fff !important;
 }
 
-html.wip-sorter-prbar .status-button,
-html.wip-sorter-prbar .merge-button,
-html.wip-sorter-prbar .vetoes-button {
+html.wip-sorter-prbar header.pull-request-header .status-button,
+html.wip-sorter-prbar header.pull-request-header .merge-button,
+html.wip-sorter-prbar header.pull-request-header .vetoes-button {
   box-sizing: border-box;
   height: 32px !important;
   opacity: 1 !important;
 }
 
-html.wip-sorter-prbar .status-button.needs-work {
+html.wip-sorter-prbar header.pull-request-header .status-button.needs-work {
   background: rgba(255, 171, 0, 0.25) !important;
   color: #ffc400 !important;
 }
 
-html.wip-sorter-prbar .status-button.needs-work.selected {
+html.wip-sorter-prbar header.pull-request-header .status-button.needs-work.selected {
   background: #ff991f !important;
   color: #172b4d !important;
 }
 
-html.wip-sorter-prbar .status-button.approve {
+html.wip-sorter-prbar header.pull-request-header .status-button.approve {
   background: rgba(54, 179, 126, 0.28) !important;
   color: #57d9a3 !important;
 }
 
-html.wip-sorter-prbar .status-button.approve.selected {
+html.wip-sorter-prbar header.pull-request-header .status-button.approve.selected {
   background: #36b37e !important;
   color: #fff !important;
 }
 
-html.wip-sorter-prbar .status-button.needs-work *,
-html.wip-sorter-prbar .status-button.approve * {
+html.wip-sorter-prbar header.pull-request-header .status-button.needs-work *,
+html.wip-sorter-prbar header.pull-request-header .status-button.approve * {
   color: inherit !important;
 }
 
-html.wip-sorter-prbar .pull-request-state-lozenge > span {
+html.wip-sorter-prbar header.pull-request-header .pull-request-state-lozenge > span {
   padding: 2px 6px;
   border-radius: 3px;
   background: #0c66e4;
@@ -614,23 +620,23 @@ html.wip-sorter-prbar .pull-request-state-lozenge > span {
 }
 
 /* Uniform control size across status, veto, merge and more buttons. */
-html.wip-sorter-prbar .reviewer-status-buttons-container {
+html.wip-sorter-prbar header.pull-request-header .reviewer-status-buttons-container {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-html.wip-sorter-prbar .status-button-wrapper,
-html.wip-sorter-prbar .status-button-wrapper > [role="presentation"],
-html.wip-sorter-prbar .vetoes-button-container,
-html.wip-sorter-prbar .vetoes-button-container > [role="presentation"] {
+html.wip-sorter-prbar header.pull-request-header .status-button-wrapper,
+html.wip-sorter-prbar header.pull-request-header .status-button-wrapper > [role="presentation"],
+html.wip-sorter-prbar header.pull-request-header .vetoes-button-container,
+html.wip-sorter-prbar header.pull-request-header .vetoes-button-container > [role="presentation"] {
   display: flex;
   align-items: center;
 }
 
-html.wip-sorter-prbar .status-button,
-html.wip-sorter-prbar .vetoes-button,
-html.wip-sorter-prbar .merge-button {
+html.wip-sorter-prbar header.pull-request-header .status-button,
+html.wip-sorter-prbar header.pull-request-header .vetoes-button,
+html.wip-sorter-prbar header.pull-request-header .merge-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -641,14 +647,14 @@ html.wip-sorter-prbar .merge-button {
   line-height: 1;
 }
 
-html.wip-sorter-prbar .status-button > span {
+html.wip-sorter-prbar header.pull-request-header .status-button > span {
   display: inline-flex;
   align-items: center;
   margin: 0;
 }
 
-html.wip-sorter-prbar .status-button svg,
-html.wip-sorter-prbar .vetoes-button svg {
+html.wip-sorter-prbar header.pull-request-header .status-button svg,
+html.wip-sorter-prbar header.pull-request-header .vetoes-button svg {
   width: 20px;
   height: 20px;
 }
@@ -841,7 +847,7 @@ html.wip-sorter-imgfit .wip-sorter-zoom-bar button.wip-sorter-zoom-active {
 }
 
 /* Approve / Needs work are the primary actions: full size, next to Start review. */
-html.wip-sorter-prbar .reviewer-status-buttons {
+html.wip-sorter-prbar header.pull-request-header .reviewer-status-buttons {
   order: -1;
   zoom: 1;
   width: max-content !important;
@@ -850,14 +856,14 @@ html.wip-sorter-prbar .reviewer-status-buttons {
   overflow: visible !important;
 }
 
-html.wip-sorter-prbar .reviewer-status-buttons-container,
-html.wip-sorter-prbar .reviewer-status-buttons .status-button-wrapper {
+html.wip-sorter-prbar header.pull-request-header .reviewer-status-buttons-container,
+html.wip-sorter-prbar header.pull-request-header .reviewer-status-buttons .status-button-wrapper {
   width: auto !important;
   height: 30px !important;
   overflow: visible !important;
 }
 
-html.wip-sorter-prbar .reviewer-status-buttons .status-button {
+html.wip-sorter-prbar header.pull-request-header .reviewer-status-buttons .status-button {
   box-sizing: border-box;
   width: 44px !important;
   min-width: 0 !important;
@@ -866,12 +872,12 @@ html.wip-sorter-prbar .reviewer-status-buttons .status-button {
   padding: 0 !important;
 }
 
-html.wip-sorter-prbar .reviewer-status-buttons .status-button svg {
+html.wip-sorter-prbar header.pull-request-header .reviewer-status-buttons .status-button svg {
   width: 20px;
   height: 20px;
 }
 
-html.wip-sorter-prbar .pull-request-header-review-button button {
+html.wip-sorter-prbar header.pull-request-header .pull-request-header-review-button button {
   display: inline-flex;
   align-items: center;
   height: 30px !important;
@@ -880,23 +886,23 @@ html.wip-sorter-prbar .pull-request-header-review-button button {
 }
 
 /* Start review hugs the approve / needs-work buttons. */
-html.wip-sorter-prbar .reviewer-status-buttons,
-html.wip-sorter-prbar .reviewer-status-buttons-container,
-html.wip-sorter-prbar .reviewer-status-buttons .status-button-wrapper {
+html.wip-sorter-prbar header.pull-request-header .reviewer-status-buttons,
+html.wip-sorter-prbar header.pull-request-header .reviewer-status-buttons-container,
+html.wip-sorter-prbar header.pull-request-header .reviewer-status-buttons .status-button-wrapper {
   margin: 0 !important;
   padding: 0 !important;
 }
 
-html.wip-sorter-prbar .pull-request-header-review-button {
+html.wip-sorter-prbar header.pull-request-header .pull-request-header-review-button {
   margin-right: -4px;
 }
 
 /* Hovering the (truncated) title shows it in full above the card. */
-html.wip-sorter-prbar .pull-request-title-review-section {
+html.wip-sorter-prbar header.pull-request-header .pull-request-title-review-section {
   position: relative;
 }
 
-html.wip-sorter-prbar .pull-request-title-review-section[data-wip-title]:has(h2:hover)::after {
+html.wip-sorter-prbar header.pull-request-header .pull-request-title-review-section[data-wip-title]:has(h2:hover)::after {
   content: attr(data-wip-title);
   position: absolute;
   right: 0;
@@ -918,7 +924,7 @@ html.wip-sorter-prbar .pull-request-title-review-section[data-wip-title]:has(h2:
 }
 
 /* Veto / Merge / more sit flush right, under the approve buttons. */
-html.wip-sorter-prbar .merge-button-container {
+html.wip-sorter-prbar header.pull-request-header .merge-button-container {
   margin-left: auto;
 }
 
@@ -959,25 +965,86 @@ html.wip-sorter-prbar .merge-button-container {
 }
 
 /* Hover must not change the veto button's size (Bitbucket restyles it on hover). */
-html.wip-sorter-prbar .vetoes-button,
-html.wip-sorter-prbar .vetoes-button:hover,
-html.wip-sorter-prbar .vetoes-button:focus,
-html.wip-sorter-prbar .vetoes-button:active {
+html.wip-sorter-prbar header.pull-request-header .vetoes-button,
+html.wip-sorter-prbar header.pull-request-header .vetoes-button:hover,
+html.wip-sorter-prbar header.pull-request-header .vetoes-button:focus,
+html.wip-sorter-prbar header.pull-request-header .vetoes-button:active {
   box-sizing: border-box;
   min-width: 48px !important;
   padding: 0 10px !important;
   gap: 4px;
 }
 
-html.wip-sorter-prbar .vetoes-button .veto-count,
-html.wip-sorter-prbar .vetoes-button:hover .veto-count {
+html.wip-sorter-prbar header.pull-request-header .vetoes-button .veto-count,
+html.wip-sorter-prbar header.pull-request-header .vetoes-button:hover .veto-count {
   display: inline !important;
   margin: 0;
 }
 
 /* Hovering your own avatar swaps it for a dashed add/remove button whose dark icon vanishes on the dark card. */
-html.wip-sorter-prbar .manage-self-button .dashed-button,
-html.wip-sorter-prbar .manage-self-button .dashed-button * {
+html.wip-sorter-prbar header.pull-request-header .manage-self-button .dashed-button,
+html.wip-sorter-prbar header.pull-request-header .manage-self-button .dashed-button * {
   color: #fff !important;
   border-color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Merged / closed PRs have no merge button: keep the more-actions button at the right edge. */
+html.wip-sorter-prbar header.pull-request-header .pull-request-more-actions {
+  margin-left: auto;
+}
+
+html.wip-sorter-prbar header.pull-request-header .merge-button-container + .pull-request-more-actions {
+  margin-left: 0;
+}
+
+html.wip-sorter-prbar header.pull-request-header .vetoes-button,
+html.wip-sorter-prbar header.pull-request-header .merge-button,
+html.wip-sorter-prbar header.pull-request-header .pull-request-more-actions button {
+  box-sizing: border-box;
+  height: 25px !important;
+  min-height: 0 !important;
+  font-size: 11px;
+}
+
+html.wip-sorter-prbar header.pull-request-header .vetoes-button,
+html.wip-sorter-prbar header.pull-request-header .vetoes-button:hover {
+  min-width: 38px !important;
+  padding: 0 8px !important;
+}
+
+html.wip-sorter-prbar header.pull-request-header .merge-button {
+  padding: 0 10px;
+}
+
+html.wip-sorter-prbar header.pull-request-header .pull-request-more-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  padding: 0 6px;
+}
+
+html.wip-sorter-prbar header.pull-request-header .vetoes-button svg,
+html.wip-sorter-prbar header.pull-request-header .pull-request-more-actions svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* The "more actions" button is a compact square with the dots centred. */
+html.wip-sorter-prbar header.pull-request-header .pull-request-more-actions button {
+  width: 28px !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  line-height: 1;
+}
+
+html.wip-sorter-prbar header.pull-request-header .pull-request-more-actions button > span,
+html.wip-sorter-prbar header.pull-request-header .pull-request-more-actions button [role="img"] {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
