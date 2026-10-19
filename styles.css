@@ -656,14 +656,15 @@ html.wip-sorter-imgfit .diff-image canvas {
 
 html.wip-sorter-imgfit .diff-image .diff-modes-buttons {
   position: sticky;
-  top: 8px;
+  top: 44px;
+  right: 12px;
   z-index: 5;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  width: max-content;
+  width: 136px;
   height: 0;
-  margin: -28px 12px 0 auto;
+  margin: 36px 12px 0 auto;
   overflow: visible;
   opacity: 0.45;
   transition: opacity 0.15s ease;
@@ -678,7 +679,7 @@ html.wip-sorter-imgfit .diff-image .diff-modes-buttons > span {
 
 html.wip-sorter-imgfit .diff-image .diff-modes-buttons > span > button {
   width: 100%;
-  text-align: left;
+  text-align: center;
 }
 
 /* Collapsed: only the current mode shows; hovering (or keyboard focus) reveals the others. */
@@ -695,4 +696,114 @@ html.wip-sorter-imgfit .diff-image .diff-modes-buttons:focus-within {
   html.wip-sorter-imgfit .diff-image .diff-modes-buttons {
     transition: none;
   }
+}
+
+/* Zoom: images grow past the viewport and the diff scroller pans both axes. */
+html.wip-sorter-imgfit .diff-image img.wip-sorter-zoomed,
+html.wip-sorter-imgfit .diff-image canvas.wip-sorter-zoomed {
+  max-width: none;
+  max-height: none;
+  cursor: grab;
+}
+
+/* Keep the existing scroller (so the sticky controls don't shift); just allow it to pan sideways. */
+.wip-sorter-zoom-scroller {
+  overflow-x: auto !important;
+}
+
+html.wip-sorter-zoom-on .diff-image {
+  box-sizing: border-box;
+  width: max-content;
+  min-width: 100%;
+}
+
+html.wip-sorter-zoom-on .diff-image .two-up-diff {
+  display: flex;
+  gap: 16px;
+}
+
+html.wip-sorter-zoom-on .diff-image .diff-image-side,
+html.wip-sorter-zoom-on .diff-image .pixel-diff {
+  flex: none;
+  margin: 0 auto;
+}
+
+html.wip-sorter-panning,
+html.wip-sorter-panning .diff-image * {
+  cursor: grabbing !important;
+  user-select: none;
+}
+
+/* Zoom buttons live in their own box under the (hover-expanding) mode switcher so nothing shifts. */
+html.wip-sorter-imgfit .diff-image .wip-sorter-zoom-bar {
+  position: sticky;
+  top: 8px;
+  right: 12px;
+  z-index: 4;
+  display: flex;
+  width: 136px;
+  height: 0;
+  margin: -28px 12px 0 auto;
+  overflow: visible;
+  opacity: 0.45;
+  transition: opacity 0.15s ease;
+}
+
+html.wip-sorter-imgfit .diff-image .wip-sorter-zoom-bar:hover,
+html.wip-sorter-imgfit .diff-image .wip-sorter-zoom-bar:focus-within {
+  opacity: 1;
+}
+
+/* Reset hard: Bitbucket's AUI button styles otherwise leak into these buttons. */
+html.wip-sorter-imgfit .wip-sorter-zoom-bar button {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 24px;
+  padding: 0 8px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #42526e;
+  font: 600 11px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(9, 30, 66, 0.25);
+}
+
+html.wip-sorter-imgfit .wip-sorter-zoom-bar button + button {
+  border-left: 1px solid rgba(9, 30, 66, 0.1);
+}
+
+html.wip-sorter-imgfit .wip-sorter-zoom-bar button:first-child {
+  border-radius: 3px 0 0 3px;
+}
+
+html.wip-sorter-imgfit .wip-sorter-zoom-bar button:last-child {
+  border-radius: 0 3px 3px 0;
+}
+
+html.wip-sorter-imgfit .wip-sorter-zoom-bar button {
+  transition: background-color 0.1s ease, color 0.1s ease;
+}
+
+html.wip-sorter-imgfit .wip-sorter-zoom-bar button:hover {
+  background: #deebff;
+  color: #0747a6;
+}
+
+html.wip-sorter-imgfit .wip-sorter-zoom-bar button.wip-sorter-zoom-active:hover {
+  background: #0747a6;
+  color: #fff;
+}
+
+html.wip-sorter-imgfit .wip-sorter-zoom-bar button:focus-visible {
+  outline: 2px solid #0747a6;
+  outline-offset: -2px;
+}
+
+html.wip-sorter-imgfit .wip-sorter-zoom-bar button.wip-sorter-zoom-active {
+  background: #172b4d;
+  color: #fff;
 }

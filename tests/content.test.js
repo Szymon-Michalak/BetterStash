@@ -202,6 +202,27 @@ test("image mode switcher marks the one selected mode", (t) => {
   assert.ok(document.querySelector(".diff-modes-buttons").classList.contains("wip-sorter-modes-collapsible"));
 });
 
+test("zoom buttons multiply every diff image; re-clicking or Esc resets", (t) => {
+  const html = '<div class="diff-view"><div class="diff-image"><div class="diff-modes-buttons"></div><div class="two-up-diff"><div class="diff-image-side"><img></div><div class="diff-image-side"><img></div></div></div></div>';
+  const { document, window, diff } = page(t, html, {}, "/projects/APP/repos/demo/pull-requests/1/diff");
+  diff.refresh();
+  const level = (value) => document.querySelector(`.wip-sorter-zoom-bar [data-zoom-level="${value}"]`);
+  assert.deepEqual([...document.querySelectorAll(".wip-sorter-zoom-bar button")].map((b) => b.textContent), ["1x", "2x", "3x"]);
+  assert.ok(level(1).classList.contains("wip-sorter-zoom-active"));
+  level(2).click();
+  assert.equal(document.querySelectorAll(".wip-sorter-zoomed").length, 2);
+  assert.ok(level(2).classList.contains("wip-sorter-zoom-active"));
+  level(3).click();
+  assert.ok(level(3).classList.contains("wip-sorter-zoom-active"));
+  level(3).click();
+  assert.equal(document.querySelectorAll(".wip-sorter-zoomed").length, 0);
+  assert.ok(level(1).classList.contains("wip-sorter-zoom-active"));
+  level(2).click();
+  document.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+  assert.equal(document.querySelectorAll(".wip-sorter-zoomed").length, 0);
+  assert.ok(level(1).classList.contains("wip-sorter-zoom-active"));
+});
+
 test("startup and live settings settle without a refresh loop", async (t) => {
   const app = page(t, section(row("w1", "WIP task")), {}, "/dashboard", true);
   await app.settle();

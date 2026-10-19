@@ -41,7 +41,11 @@ BetterStash.createDiff = function (settings) {
     const view = document.querySelector(".diff-view");
     const active = settings.imageFit && DIFF_TAB_PATH.test(location.pathname) && !!view?.querySelector(".diff-image");
     root.classList.toggle("wip-sorter-imgfit", active);
-    if (!active) return root.style.removeProperty("--wip-sorter-diff-h");
+    if (!active) {
+      wantedZoom = 1;
+      resetZoom();
+      return root.style.removeProperty("--wip-sorter-diff-h");
+    }
     const rect = view.getBoundingClientRect();
     const height = Math.round(Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0));
     if (height > 0) root.style.setProperty("--wip-sorter-diff-h", `${height}px`);
@@ -60,8 +64,132 @@ BetterStash.createDiff = function (settings) {
     bar.classList.toggle("wip-sorter-modes-collapsible", !!holder);
   }
 
+  // Zoom buttons (under the mode switcher): 1x is the fitted size; 2x/3x multiply every image's fitted width.
+  // The existing diff scroller pans, so Old and New move together.
+  const ZOOM_TARGETS = ".diff-image img, .diff-image canvas";
+  const ZOOM_LEVELS = [1, 2, 3];
+  let drag = null;
+  let wantedZoom = 1; // survives mode switches, which replace the images
+
+  const zoomTargets = () => [...document.querySelectorAll(ZOOM_TARGETS)];
+  const zoomedElements = () => [...document.querySelectorAll(".diff-image .wip-sorter-zoomed")];
+
+  function scrollerOf(el) {
+    for (let node = el.parentElement; node; node = node.parentElement) {
+      const { overflowX, overflowY } = getComputedStyle(node);
+      if (/(auto|scroll)/.test(overflowX + overflowY) && (node.scrollWidth > node.clientWidth || node.scrollHeight > node.clientHeight)) return node;
+    }
+    return document.scrollingElement;
+  }
+
+  function resetZoom() {
+    zoomedElements().forEach((el) => {
+      el.classList.remove("wip-sorter-zoomed");
+      el.style.removeProperty("width");
+    });
+    document.documentElement.classList.remove("wip-sorter-zoom-on");
+    document.querySelectorAll(".wip-sorter-zoom-scroller").forEach((el) => el.classList.remove("wip-sorter-zoom-scroller"));
+  }
+
+  function applyZoom(factor) {
+    if (factor <= 1) return resetZoom();
+    const first = zoomTargets()[0];
+    if (!first) return;
+    const scroller = scrollerOf(first);
+    if (scroller && scroller !== document.scrollingElement) scroller.classList.add("wip-sorter-zoom-scroller");
+    const before = first.getBoundingClientRect();
+    const view = scroller && scroller.getBoundingClientRect();
+    const fx = view && before.width ? (view.left + view.width / 2 - before.left) / before.width : 0.5;
+    const fy = view && before.height ? (view.top + view.height / 2 - before.top) / before.height : 0.5;
+    const fitWidths = zoomTargets().map((el) =>
+      el.classList.contains("wip-sorter-zoomed") ? Number(el.dataset.wipFitWidth) : el.getBoundingClientRect().width);
+    document.documentElement.classList.add("wip-sorter-zoom-on");
+    zoomTargets().forEach((el, i) => {
+      el.dataset.wipFitWidth = String(fitWidths[i]);
+      el.classList.add("wip-sorter-zoomed");
+      if (fitWidths[i]) el.style.width = `${fitWidths[i] * factor}px`;
+    });
+    const scrolled = scrollerOf(first) || scroller;
+    if (!scrolled) return;
+    const after = first.getBoundingClientRect();
+    const box = scrolled.getBoundingClientRect();
+    scrolled.scrollLeft += after.left + fx * after.width - (box.left + box.width / 2);
+    scrolled.scrollTop += after.top + fy * after.height - (box.top + box.height / 2);
+  }
+
+  function syncZoomControl(bar) {
+    bar.dataset.zoom = String(wantedZoom);
+    const current = Number(bar.dataset.zoom) || 1;
+    bar.querySelectorAll("button").forEach((btn) =>
+      btn.classList.toggle("wip-sorter-zoom-active", Number(btn.dataset.zoomLevel) === current));
+  }
+
+  function ensureZoomControl() {
+    const diffImage = document.querySelector(".diff-image");
+    if (!diffImage) return;
+    let bar = diffImage.querySelector(":scope > .wip-sorter-zoom-bar");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.className = "wip-sorter-zoom-bar";
+      bar.setAttribute("role", "group");
+      bar.setAttribute("aria-label", "Zoom image diff");
+      ZOOM_LEVELS.forEach((level) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.dataset.zoomLevel = String(level);
+        btn.textContent = `${level}x`;
+        btn.title = level === 1 ? "Fit to screen" : `Zoom to ${level}x the fitted size (click again to reset)`;
+        btn.addEventListener("click", () => {
+          wantedZoom = wantedZoom === level ? 1 : level;
+          applyZoom(wantedZoom);
+          syncZoomControl(bar);
+        });
+        bar.appendChild(btn);
+      });
+    }
+    // Sticky positioning keys off where the element sits in flow, so it must directly precede the toolbar.
+    const toolbar = diffImage.querySelector(":scope > .diff-modes-buttons");
+    if (toolbar && bar.nextElementSibling !== toolbar) toolbar.before(bar);
+    else if (!bar.parentElement) diffImage.appendChild(bar);
+    const targets = zoomTargets();
+    if (wantedZoom > 1 && targets.length && targets.some((el) => !el.classList.contains("wip-sorter-zoomed"))) {
+      resetZoom();
+      applyZoom(wantedZoom);
+    }
+    syncZoomControl(bar);
+  }
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || !zoomedElements().length) return;
+    wantedZoom = 1;
+    resetZoom();
+    ensureZoomControl();
+  });
+
+  document.addEventListener("mousedown", (event) => {
+    const target = event.target;
+    if (event.button !== 0 || !(target instanceof Element) || !target.classList.contains("wip-sorter-zoomed")) return;
+    event.preventDefault();
+    const scroller = scrollerOf(target);
+    if (!scroller) return;
+    drag = { scroller, x: event.clientX, y: event.clientY, left: scroller.scrollLeft, top: scroller.scrollTop };
+    document.documentElement.classList.add("wip-sorter-panning");
+  });
+
+  document.addEventListener("mousemove", (event) => {
+    if (!drag) return;
+    drag.scroller.scrollLeft = drag.left - (event.clientX - drag.x);
+    drag.scroller.scrollTop = drag.top - (event.clientY - drag.y);
+  });
+
+  document.addEventListener("mouseup", () => {
+    drag = null;
+    document.documentElement.classList.remove("wip-sorter-panning");
+  });
+
   function refresh() {
     markActiveMode();
+    ensureZoomControl();
     refreshPrBar();
     refreshImageFit();
   }
