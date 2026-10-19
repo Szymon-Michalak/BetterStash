@@ -49,8 +49,45 @@ async function updateConnectionState(pattern) {
   $("disconnectSite").hidden = !connected;
 }
 
+const CATEGORY_KEY = "bsCategory";
+const isWide = () => Boolean(globalThis.matchMedia?.("(min-width: 760px)").matches);
+
+function openCategory(name, toggle = false) {
+  const panels = document.querySelectorAll(".panel");
+  const target = [...panels].find((panel) => panel.dataset.cat === name);
+  if (!target) return;
+  const shouldClose = toggle && !isWide() && target.classList.contains("open");
+  panels.forEach((panel) => {
+    const open = panel === target && !shouldClose;
+    panel.classList.toggle("open", open);
+    panel.querySelector(".panel-head").setAttribute("aria-expanded", String(open));
+  });
+  document.querySelectorAll(".cats button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.cat === target.dataset.cat);
+  });
+  if (!shouldClose) {
+    try { localStorage.setItem(CATEGORY_KEY, name); } catch { /* storage may be unavailable */ }
+  }
+}
+
+document.querySelectorAll(".cats button").forEach((button) => {
+  button.addEventListener("click", () => openCategory(button.dataset.cat));
+});
+document.querySelectorAll(".panel-head").forEach((head) => {
+  head.addEventListener("click", () => openCategory(head.parentElement.dataset.cat, true));
+});
+
+function initCategory(connected) {
+  let saved = "";
+  try { saved = localStorage.getItem(CATEGORY_KEY) || ""; } catch { /* ignore */ }
+  openCategory(saved || (connected ? "you" : "connection"));
+}
+
 async function load() {
-  if (!store) return status("Extension storage is unavailable. Reload the extension.", true);
+  if (!store) {
+    initCategory(true);
+    return status("Extension storage is unavailable. Reload the extension.", true);
+  }
   try {
     const settings = await storageGet(DEFAULTS);
     FORM_KEYS.forEach((key) => {
@@ -60,8 +97,10 @@ async function load() {
     });
     $("siteUrl").value = StashSiteConfig.displayOrigin(settings.sitePattern);
     await updateConnectionState(settings.sitePattern);
+    initCategory(Boolean(settings.sitePattern));
   } catch (error) {
     status(error.message, true);
+    initCategory(true);
   }
 }
 

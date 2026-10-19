@@ -109,6 +109,38 @@
     .connection-status { color: var(--muted); font-size: 11.5px; margin-top: 6px; }
     .status { margin-top: 14px; padding: 0 16px; color: #00875a; font-size: 12px; min-height: 1em; }
     .status.error { color: #de350b; }
+    .cats { display: none; }
+    .panel + .panel { border-top: 1px solid var(--border); }
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      padding: 11px 16px;
+      border-radius: 0;
+      background: #fff;
+      color: var(--ink);
+      font-size: 13px;
+      text-align: left;
+    }
+    .panel-head:hover { background: var(--surface); }
+    .panel-head::after { content: "›"; font-size: 16px; color: var(--muted); transition: transform 0.12s ease; }
+    .panel.open .panel-head::after { transform: rotate(90deg); }
+    .panel:not(.open) .panel-body { display: none; }
+    main { padding: 0; }
+    .panel-body { padding: 0 16px 4px; }
+    @media (min-width: 760px) {
+      body { width: auto; max-width: 960px; margin: 0 auto; }
+      .layout { display: grid; grid-template-columns: 200px 1fr; gap: 24px; padding: 8px 16px 0; align-items: start; }
+      .cats { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 16px; padding-top: 14px; }
+      .cats button { background: transparent; color: var(--ink); text-align: left; padding: 9px 12px; }
+      .cats button:hover { background: var(--surface); }
+      .cats button.active { background: rgba(7, 71, 166, 0.1); color: var(--accent); }
+      .panel-head { display: none; }
+      .panel + .panel { border-top: 0; }
+      .panel-body { padding: 0; }
+      .status { padding: 0 16px; }
+    }
   </style>
 </head>
 <body>
@@ -117,7 +149,18 @@
     <h1>BetterStash</h1>
   </header>
 
+  <div class="layout">
+  <nav class="cats" aria-label="Settings categories">
+    <button type="button" data-cat="connection">Connection</button>
+    <button type="button" data-cat="you">You &amp; team</button>
+    <button type="button" data-cat="dashboard">Dashboard</button>
+    <button type="button" data-cat="diff">Diff view</button>
+  </nav>
+
   <main>
+  <div class="panel" data-cat="connection">
+  <button type="button" class="panel-head" aria-expanded="false">Connection</button>
+  <div class="panel-body">
   <section class="card">
     <div class="field">
       <label for="siteUrl">Bitbucket Server URL</label>
@@ -130,7 +173,12 @@
       <div class="connection-status" id="connectionStatus"></div>
     </div>
   </section>
+  </div>
+  </div>
 
+  <div class="panel" data-cat="you">
+  <button type="button" class="panel-head" aria-expanded="false">You &amp; team</button>
+  <div class="panel-body">
   <section class="card">
     <h2>Identity</h2>
     <div class="field">
@@ -151,7 +199,12 @@
     <label class="row"><input type="checkbox" id="teamIcon"> Small team badge after the author name</label>
     <label class="row"><input type="checkbox" id="pinTeam"> Pin team PRs to top of "to review"</label>
   </section>
+  </div>
+  </div>
 
+  <div class="panel" data-cat="dashboard">
+  <button type="button" class="panel-head" aria-expanded="false">Dashboard</button>
+  <div class="panel-body">
   <section class="card">
     <h2>Auto-expand "Show more pull requests"</h2>
     <label class="row"><input type="checkbox" id="expandReview"> Pull requests to review</label>
@@ -168,6 +221,16 @@
   </section>
 
   <section class="card">
+    <h2>Layout</h2>
+    <label class="row"><input type="checkbox" id="zenMode"> Zen mode (hide sidebar, narrow + center the main panel)</label>
+  </section>
+  </div>
+  </div>
+
+  <div class="panel" data-cat="diff">
+  <button type="button" class="panel-head" aria-expanded="false">Diff view</button>
+  <div class="panel-body">
+  <section class="card">
     <h2>Diff view</h2>
     <label class="row"><input type="checkbox" id="prBar"> Compact pull request header (floats bottom-right)</label>
     <label class="row"><span>Show header card on</span> <select id="prBarScope"><option value="diff">Diff tab only</option><option value="all">All pull request tabs</option></select></label>
@@ -180,12 +243,10 @@
       <div class="hint">Placeholders: {url} {branch} {target} {repo} {project} {id} {title}</div>
     </div>
   </section>
-
-  <section class="card">
-    <h2>Dashboard</h2>
-    <label class="row"><input type="checkbox" id="zenMode"> Zen mode (hide sidebar, narrow + center the main panel)</label>
-  </section>
+  </div>
+  </div>
   </main>
+  </div>
 
   <div class="status" id="status"></div>
   <script src="shared.js"></script>

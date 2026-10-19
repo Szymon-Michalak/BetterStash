@@ -4,6 +4,7 @@ All notable changes are documented here. This project follows [Semantic Versioni
 
 ## Unreleased
 
+- Changed: settings are grouped into categories — a sidebar in a full tab, an accordion in the popup — and the last opened category is remembered.
 - Added: zoom buttons (1x / 2x / 3x the fitted size) under the image mode switcher. Drag the zoomed image
   to pan; Old and New scroll together. Esc returns to fit.
 - Added: "Copy to prompt" button on PR pages; the copied text is a template with {url} {branch} {target} {repo} {project} {id} {title}, editable in settings.
