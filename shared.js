@@ -31,8 +31,9 @@
     return String(s || "").normalize("NFC").replace(/\s+/g, " ").trim().toLowerCase();
   }
 
-  function isSinglePrPage() {
-    return /\/pull-requests\/\d+(\/|$)/.test(location.pathname);
+  // The sorter and zen mode only belong on the dashboard (not repo PR lists or single PRs).
+  function isDashboardPage() {
+    return /\/dashboard\/?$/.test(location.pathname);
   }
 
   function button(className, label, tooltip, onClick) {
@@ -50,5 +51,5 @@
     globalThis.chrome?.storage?.local?.set(settings);
   }
 
-  globalThis.BetterStash = { defaults, text, norm, isSinglePrPage, button, save };
+  globalThis.BetterStash = { defaults, text, norm, isDashboardPage, button, save };
 })();

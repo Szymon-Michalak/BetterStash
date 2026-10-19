@@ -1,6 +1,6 @@
 BetterStash.createDashboard = function (settings, layout) {
   "use strict";
-  const { text, norm, isSinglePrPage, save } = BetterStash;
+  const { text, norm, isDashboardPage, save } = BetterStash;
   const { prepareStateLabel, markNewCommitsIndicator,
     applyStateLabelPlacement, applyZenColumnCollapse } = layout;
   const WIP_PATTERN = /(^|[\s\[\(])(wip|draft|do not merge)([\s\]\):\-]|$)/i;
@@ -454,7 +454,7 @@ BetterStash.createDashboard = function (settings, layout) {
   });
 
   function sortOnce() {
-    if (isSinglePrPage()) return;
+    if (!isDashboardPage()) return;
 
     const seen = new Set();
 

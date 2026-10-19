@@ -1,6 +1,6 @@
 BetterStash.createLayout = function (settings) {
   "use strict";
-  const { text, isSinglePrPage, button, save } = BetterStash;
+  const { text, isDashboardPage, button, save } = BetterStash;
 
   const originalPositions = new WeakMap();
 
@@ -78,7 +78,8 @@ BetterStash.createLayout = function (settings) {
   }
 
   function applyZenMode() {
-    if (isSinglePrPage()) {
+    if (!isDashboardPage()) {
+      document.documentElement.classList.remove("wip-sorter-zen");
       if (zenToggleBtn) {
         zenToggleBtn.remove();
         zenToggleBtn = null;
@@ -100,7 +101,7 @@ BetterStash.createLayout = function (settings) {
     const t = e.target;
     if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
     if (e.altKey || e.ctrlKey || e.metaKey) return;
-    if (!document.querySelector(SIDE_PANEL_SELECTOR)) return;
+    if (!isDashboardPage() || !document.querySelector(SIDE_PANEL_SELECTOR)) return;
     e.preventDefault();
     setZenMode(!settings.zenMode);
   });

@@ -6,6 +6,7 @@ All notable changes are documented here. This project follows [Semantic Versioni
 
 - Added: zoom buttons (1x / 2x / 3x the fitted size) under the image mode switcher. Drag the zoomed image
   to pan; Old and New scroll together. Esc returns to fit.
+- Changed: the sorter and zen mode now run only on `/dashboard`, no longer on repository PR lists.
 - Added: image diffs on the Diff tab are fitted to the visible height (no more scrolling through tall
   snapshots), and the Side-by-side/Blend/Split/Pixel-diff switcher stays pinned and fades until hovered.
   Toggle: "Fit image diffs".

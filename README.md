@@ -75,8 +75,8 @@ See [PRIVACY.md](PRIVACY.md) for the complete privacy statement.
 If **Approved by me** does not detect an approval, verify your display name first. Bitbucket DOM
 markup varies by release, so sanitized HTML or screenshots are useful in bug reports.
 
-Tiering never runs on a single pull request's own page (Overview/Diff/Commits/…) — only on
-dashboard and list pages — so it can't reorder or hide anything while you're reviewing a diff.
+Tiering and zen mode only run on the dashboard (`/dashboard`) — not on a repository's pull request
+list or a single pull request — so they can't reorder or hide anything elsewhere.
 
 ## Development
 

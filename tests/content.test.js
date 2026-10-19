@@ -244,6 +244,16 @@ test("startup and live settings settle without a refresh loop", async (t) => {
   assert.equal(app.document.querySelectorAll("[data-wip-heading]").length, 1);
 });
 
+test("the sorter only runs on the dashboard", (t) => {
+  const html = section(row("w1", "WIP task"));
+  const list = page(t, html, {}, "/projects/APP/repos/demo/pull-requests");
+  list.dashboard.refresh();
+  assert.equal(list.document.querySelectorAll("[data-wip-heading]").length, 0);
+  const home = page(t, html, {}, "/dashboard");
+  home.dashboard.refresh();
+  assert.equal(home.document.querySelectorAll("[data-wip-heading]").length, 1);
+});
+
 test("list headings stay ordered when tiers appear later", (t) => {
   const item = (id, title, extra = "") => `<li id="${id}"><a href="/pull-requests/1">${title}</a>${extra}</li>`;
   const { document, dashboard } = page(t, `<h2>Pull requests to review</h2><ul>${item("a", "Ready", approval)}</ul>`, { identity: "Alex" });
