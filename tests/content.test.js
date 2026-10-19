@@ -168,6 +168,15 @@ test("zen mode moves the same status node and restores its exact position and co
   assert.equal(document.querySelector("th").colSpan, 6);
 });
 
+test("compact PR header can float on every PR tab", (t) => {
+  const html = '<header class="pull-request-header"></header><div class="pull-request-tabs"><div class="tabs-pane active-pane"><div></div></div></div>';
+  const overview = page(t, html, { prBarScope: "all" }, "/projects/APP/repos/demo/pull-requests/1/overview");
+  overview.diff.refresh();
+  const root = overview.document.documentElement.classList;
+  assert.ok(root.contains("wip-sorter-prbar"));
+  assert.ok(!root.contains("wip-sorter-prbar-diff"));
+});
+
 test("compact PR header only applies on the diff tab and can be disabled", (t) => {
   const html = '<header class="pull-request-header"></header><div class="pull-request-tabs"><div class="tabs-pane active-pane"><div></div></div></div>';
   const on = page(t, html, {}, "/projects/APP/repos/demo/pull-requests/1/diff");

@@ -166,7 +166,8 @@
 
   <section class="card">
     <h2>Diff view</h2>
-    <label class="row"><input type="checkbox" id="prBar"> Compact pull request header (floats bottom-right on the Diff tab)</label>
+    <label class="row"><input type="checkbox" id="prBar"> Compact pull request header (floats bottom-right)</label>
+    <label class="row"><span>Show header card on</span> <select id="prBarScope"><option value="diff">Diff tab only</option><option value="all">All pull request tabs</option></select></label>
     <label class="row"><span>Idle opacity</span> <input type="range" id="prBarOpacity" min="20" max="100" step="5"> <span class="hint">fades in on hover</span></label>
     <label class="row"><input type="checkbox" id="imageFit"> Fit image diffs (e.g. snapshots) to the screen height, with a sticky mode switcher</label>
   </section>

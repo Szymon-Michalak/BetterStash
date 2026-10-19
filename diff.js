@@ -14,21 +14,47 @@ BetterStash.createDiff = function (settings) {
     });
   }
 
-  const DIFF_TAB_PATH = /\/pull-requests\/\d+\/diff(\/|$)/;
+  const DIFF_TAB_PATH = /\/pull-requests\/\d+\/(diff(\/|$)|commits\/[0-9a-f]+)/i;
+  const PR_PATH = /\/pull-requests\/\d+(\/|$)/;
   const PANE_SELECTOR = ".pull-request-tabs .tabs-pane.active-pane > div";
   const PANE_BOTTOM_GAP = 3;
 
   // The PR header is only restyled (never moved) because Bitbucket's React tree owns those nodes.
   // Bitbucket sizes the diff pane with an inline "100vh - header height"; once the header leaves the
   // flow we recompute it from where the pane actually starts.
+  // The task summary ("No open tasks" / "3 open tasks") is an unknown Atlaskit node, so find it by text and
+  // tag the flex item that wraps it; the card hides it when there is nothing open.
+  function tagTaskSummary() {
+    const header = document.querySelector("header.pull-request-header");
+    if (!header) return;
+    const wrappers = new Set(["pull-request-header-bar", "pull-request-actions", "pull-request-metadata"]);
+    header.querySelectorAll("*").forEach((el) => {
+      if (el.children.length || !/\btasks?\s*$/i.test(el.textContent.trim()) || el.closest("h2")) return;
+      let item = el;
+      while (item.parentElement && item.parentElement !== header && ![...wrappers].some((c) => item.parentElement.classList.contains(c))) {
+        item = item.parentElement;
+      }
+      item.classList.add("wip-sorter-tasks");
+      item.classList.toggle("wip-sorter-tasks-none", /^no\b/i.test(el.textContent.trim()));
+    });
+  }
+
   function refreshPrBar() {
     const root = document.documentElement;
-    const active =
-      settings.prBar && DIFF_TAB_PATH.test(location.pathname) && !!document.querySelector("header.pull-request-header");
+    const onDiff = DIFF_TAB_PATH.test(location.pathname);
+    const pathOk = settings.prBarScope === "all" ? PR_PATH.test(location.pathname) : onDiff;
+    const active = settings.prBar && pathOk && !!document.querySelector("header.pull-request-header");
     root.classList.toggle("wip-sorter-prbar", active);
+    root.classList.toggle("wip-sorter-prbar-diff", active && onDiff);
+    if (active) {
+      tagTaskSummary();
+      const section = document.querySelector(".pull-request-title-review-section");
+      const title = section?.querySelector("h2")?.textContent.trim();
+      if (section && title && section.dataset.wipTitle !== title) section.dataset.wipTitle = title;
+    }
     const percent = Math.min(100, Math.max(20, Number(settings.prBarOpacity) || 50));
     root.style.setProperty("--wip-sorter-prbar-opacity", String(percent / 100));
-    const pane = active && document.querySelector(PANE_SELECTOR);
+    const pane = active && onDiff && document.querySelector(PANE_SELECTOR);
     if (!pane) return root.style.removeProperty("--wip-sorter-pane-top");
     const top = Math.round(pane.getBoundingClientRect().top + window.scrollY);
     root.style.setProperty("--wip-sorter-pane-top", `${top + PANE_BOTTOM_GAP}px`);
@@ -150,7 +176,7 @@ BetterStash.createDiff = function (settings) {
     // Sticky positioning keys off where the element sits in flow, so it must directly precede the toolbar.
     const toolbar = diffImage.querySelector(":scope > .diff-modes-buttons");
     if (toolbar && bar.nextElementSibling !== toolbar) toolbar.before(bar);
-    else if (!bar.parentElement) diffImage.appendChild(bar);
+    else if (!toolbar && diffImage.firstElementChild !== bar) diffImage.prepend(bar);
     const targets = zoomTargets();
     if (wantedZoom > 1 && targets.length && targets.some((el) => !el.classList.contains("wip-sorter-zoomed"))) {
       resetZoom();

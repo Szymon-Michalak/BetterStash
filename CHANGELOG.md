@@ -12,7 +12,7 @@ All notable changes are documented here. This project follows [Semantic Versioni
 
 - Added: on a pull request's Diff tab the PR header (branches, state, reviewers, approve/needs-work,
   merge, more actions, title, Start review) collapses into a compact card in the bottom-right corner
-  and the diff pane grows to fill the space. Toggle: "Compact pull request header".
+  and the diff pane grows to fill the space. Toggle: "Compact pull request header"; "Show header card on" picks the Diff tab only or all PR tabs.
 
 - Removed: the floating prev/next file navigation, folder expand/collapse buttons and the
   `fileNav` setting; Bitbucket's native shortcuts cover this.

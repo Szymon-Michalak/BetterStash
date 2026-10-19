@@ -383,15 +383,22 @@ html.wip-sorter-prbar .pull-request-header-bar > [role="presentation"] {
 }
 
 html.wip-sorter-prbar .pull-request-title-review-section {
-  order: -1;
+  order: -2;
   display: flex;
-  flex: 1 0 100%;
+  flex: 1 1 0;
   align-items: center;
   gap: 10px;
   min-width: 0;
   margin: 0;
-  padding: 0 0 6px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 0;
+}
+
+/* Row break + divider; the approve / needs-work buttons share the first row with Start review. */
+html.wip-sorter-prbar header.pull-request-header::before {
+  content: "";
+  flex: 0 0 100%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.16);
 }
 
 html.wip-sorter-prbar h2.pull-request-header-title {
@@ -416,9 +423,21 @@ html.wip-sorter-prbar .pull-request-header-review-button {
   margin: 0;
 }
 
+html.wip-sorter-prbar .wip-sorter-tasks-none {
+  display: none !important;
+}
+
+html.wip-sorter-prbar .wip-sorter-tasks {
+  flex: none;
+  margin: 0;
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 html.wip-sorter-prbar .pull-request-metadata {
   display: flex;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   align-items: center;
   gap: 6px;
   min-width: 0;
@@ -440,7 +459,7 @@ html.wip-sorter-prbar .branch-from-to .ref-lozenge {
 }
 
 /* Shrink the right-hand controls (avatars, buttons) rather than restyling Atlaskit's hashed classes. */
-html.wip-sorter-prbar .pull-request-reviewers,
+html.wip-sorter-prbar .pull-request-reviewers-list,
 html.wip-sorter-prbar .reviewer-status-buttons,
 html.wip-sorter-prbar .merge-button-container,
 html.wip-sorter-prbar .pull-request-more-actions {
@@ -448,6 +467,11 @@ html.wip-sorter-prbar .pull-request-more-actions {
   margin: 0;
   padding: 0;
   zoom: 0.78;
+}
+
+/* Flatten so the status buttons can move up next to Start review. */
+html.wip-sorter-prbar .pull-request-reviewers {
+  display: contents;
 }
 
 html.wip-sorter-prbar .pull-request-reviewers-list {
@@ -512,7 +536,7 @@ html.wip-sorter-prbar .merge-button:disabled {
 }
 
 /* Replaces Bitbucket's inline "100vh - header" height; the variable is measured in diff.js. */
-html.wip-sorter-prbar .pull-request-tabs .tabs-pane.active-pane > div {
+html.wip-sorter-prbar-diff .pull-request-tabs .tabs-pane.active-pane > div {
   height: calc(100vh - var(--wip-sorter-pane-top, 150px)) !important;
 }
 
@@ -806,4 +830,86 @@ html.wip-sorter-imgfit .wip-sorter-zoom-bar button:focus-visible {
 html.wip-sorter-imgfit .wip-sorter-zoom-bar button.wip-sorter-zoom-active {
   background: #172b4d;
   color: #fff;
+}
+
+/* Approve / Needs work are the primary actions: full size, next to Start review. */
+html.wip-sorter-prbar .reviewer-status-buttons {
+  order: -1;
+  zoom: 1;
+  width: max-content !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  overflow: visible !important;
+}
+
+html.wip-sorter-prbar .reviewer-status-buttons-container,
+html.wip-sorter-prbar .reviewer-status-buttons .status-button-wrapper {
+  width: auto !important;
+  height: 30px !important;
+  overflow: visible !important;
+}
+
+html.wip-sorter-prbar .reviewer-status-buttons .status-button {
+  box-sizing: border-box;
+  width: 44px !important;
+  min-width: 0 !important;
+  height: 30px !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+}
+
+html.wip-sorter-prbar .reviewer-status-buttons .status-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+html.wip-sorter-prbar .pull-request-header-review-button button {
+  display: inline-flex;
+  align-items: center;
+  height: 30px !important;
+  line-height: 1;
+  padding: 0 14px;
+}
+
+/* Start review hugs the approve / needs-work buttons. */
+html.wip-sorter-prbar .reviewer-status-buttons,
+html.wip-sorter-prbar .reviewer-status-buttons-container,
+html.wip-sorter-prbar .reviewer-status-buttons .status-button-wrapper {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+html.wip-sorter-prbar .pull-request-header-review-button {
+  margin-right: -4px;
+}
+
+/* Hovering the (truncated) title shows it in full above the card. */
+html.wip-sorter-prbar .pull-request-title-review-section {
+  position: relative;
+}
+
+html.wip-sorter-prbar .pull-request-title-review-section[data-wip-title]:has(h2:hover)::after {
+  content: attr(data-wip-title);
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 18px);
+  z-index: 10;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(560px, calc(100vw - 48px));
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #091e42;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: normal;
+  box-shadow: 0 8px 28px rgba(9, 30, 66, 0.55);
+  pointer-events: none;
+}
+
+/* Veto / Merge / more sit flush right, under the approve buttons. */
+html.wip-sorter-prbar .merge-button-container {
+  margin-left: auto;
 }

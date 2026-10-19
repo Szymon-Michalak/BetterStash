@@ -17,6 +17,7 @@
     dimRows: true,
     prBar: true,
     prBarOpacity: 50,
+    prBarScope: "diff",
     imageFit: true,
     zenMode: false,
     collapsedTiers: Object.freeze({}),
