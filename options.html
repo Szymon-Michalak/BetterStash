@@ -73,7 +73,8 @@
     label.row input[type=range] { width: 140px; height: auto; }
     label.row input { margin: 0; accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
     .field label { display: block; margin-bottom: 4px; color: var(--muted); font-weight: 600; }
-    .field input[type=text] {
+    .field input[type=text],
+    .field textarea {
       width: 100%;
       padding: 7px 9px;
       border: 1px solid var(--border);
@@ -81,7 +82,9 @@
       font: inherit;
       transition: border-color 0.12s ease, box-shadow 0.12s ease;
     }
-    .field input[type=text]:focus {
+    .field textarea { box-sizing: border-box; resize: vertical; min-height: 60px; }
+    .field input[type=text]:focus,
+    .field textarea:focus {
       outline: none;
       border-color: var(--accent);
       box-shadow: 0 0 0 3px rgba(7, 71, 166, 0.15);
@@ -170,6 +173,12 @@
     <label class="row"><span>Show header card on</span> <select id="prBarScope"><option value="diff">Diff tab only</option><option value="all">All pull request tabs</option></select></label>
     <label class="row"><span>Idle opacity</span> <input type="range" id="prBarOpacity" min="20" max="100" step="5"> <span class="hint">fades in on hover</span></label>
     <label class="row"><input type="checkbox" id="imageFit"> Fit image diffs (e.g. snapshots) to the screen height, with a sticky mode switcher</label>
+    <label class="row"><input type="checkbox" id="copyPrButton"> "Copy to prompt" button on pull request pages</label>
+    <div class="field">
+      <label for="copyPrTemplate">Copied text</label>
+      <textarea id="copyPrTemplate" rows="3" spellcheck="false"></textarea>
+      <div class="hint">Placeholders: {url} {branch} {target} {repo} {project} {id} {title}</div>
+    </div>
   </section>
 
   <section class="card">

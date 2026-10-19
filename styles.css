@@ -303,7 +303,9 @@ html.wip-sorter-zen .wip-sorter-has-new-commits::after {
 }
 
 .wip-sorter-zen-toggle::after,
-.wip-sorter-zen-toggle::before {
+.wip-sorter-zen-toggle::before,
+.wip-sorter-copy-pr::after,
+.wip-sorter-copy-pr::before {
   position: absolute;
   right: 0;
   bottom: calc(100% + 8px);
@@ -313,7 +315,8 @@ html.wip-sorter-zen .wip-sorter-has-new-commits::after {
   transition: opacity 0.1s ease 0.05s, transform 0.1s ease 0.05s;
 }
 
-.wip-sorter-zen-toggle::after {
+.wip-sorter-zen-toggle::after,
+.wip-sorter-copy-pr::after {
   content: attr(data-tooltip);
   background: #091e42;
   color: #fff;
@@ -324,7 +327,8 @@ html.wip-sorter-zen .wip-sorter-has-new-commits::after {
   box-shadow: 0 2px 8px rgba(9, 30, 66, 0.35);
 }
 
-.wip-sorter-zen-toggle::before {
+.wip-sorter-zen-toggle::before,
+.wip-sorter-copy-pr::before {
   content: "";
   right: 12px;
   bottom: 100%;
@@ -336,7 +340,11 @@ html.wip-sorter-zen .wip-sorter-has-new-commits::after {
 .wip-sorter-zen-toggle:hover::after,
 .wip-sorter-zen-toggle:hover::before,
 .wip-sorter-zen-toggle:focus-visible::after,
-.wip-sorter-zen-toggle:focus-visible::before {
+.wip-sorter-zen-toggle:focus-visible::before,
+.wip-sorter-copy-pr:hover::after,
+.wip-sorter-copy-pr:hover::before,
+.wip-sorter-copy-pr:focus-visible::after,
+.wip-sorter-copy-pr:focus-visible::before {
   opacity: 1;
   transform: translateY(0);
 }
@@ -912,4 +920,64 @@ html.wip-sorter-prbar .pull-request-title-review-section[data-wip-title]:has(h2:
 /* Veto / Merge / more sit flush right, under the approve buttons. */
 html.wip-sorter-prbar .merge-button-container {
   margin-left: auto;
+}
+
+/* "Copy to prompt" pill: sits just above the floating PR card (or in the corner without it). */
+.wip-sorter-copy-pr {
+  all: unset;
+  position: fixed;
+  right: 16px;
+  bottom: calc(16px + var(--wip-sorter-card-h, 0px) + 8px);
+  z-index: 9999;
+  box-sizing: border-box;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  background: #172b4d;
+  color: #fff;
+  font-size: 16px;
+  line-height: 36px;
+  text-align: center;
+  cursor: pointer;
+  opacity: var(--wip-sorter-prbar-opacity, 0.5);
+  box-shadow: 0 4px 14px rgba(9, 30, 66, 0.35);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.wip-sorter-copy-pr:hover,
+.wip-sorter-copy-pr:focus-visible {
+  opacity: 1;
+  transform: scale(1.06);
+}
+
+.wip-sorter-copy-scratch {
+  position: fixed;
+  top: 0;
+  left: 0;
+  opacity: 0;
+}
+
+/* Hover must not change the veto button's size (Bitbucket restyles it on hover). */
+html.wip-sorter-prbar .vetoes-button,
+html.wip-sorter-prbar .vetoes-button:hover,
+html.wip-sorter-prbar .vetoes-button:focus,
+html.wip-sorter-prbar .vetoes-button:active {
+  box-sizing: border-box;
+  min-width: 48px !important;
+  padding: 0 10px !important;
+  gap: 4px;
+}
+
+html.wip-sorter-prbar .vetoes-button .veto-count,
+html.wip-sorter-prbar .vetoes-button:hover .veto-count {
+  display: inline !important;
+  margin: 0;
+}
+
+/* Hovering your own avatar swaps it for a dashed add/remove button whose dark icon vanishes on the dark card. */
+html.wip-sorter-prbar .manage-self-button .dashed-button,
+html.wip-sorter-prbar .manage-self-button .dashed-button * {
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.85) !important;
 }

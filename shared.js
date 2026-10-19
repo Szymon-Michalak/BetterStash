@@ -19,6 +19,8 @@
     prBarOpacity: 50,
     prBarScope: "diff",
     imageFit: true,
+    copyPrButton: true,
+    copyPrTemplate: "szymreview {url}",
     zenMode: false,
     collapsedTiers: Object.freeze({}),
   });

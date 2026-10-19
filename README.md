@@ -64,6 +64,8 @@ See [PRIVACY.md](PRIVACY.md) for the complete privacy statement.
 - **Team members** — display names to highlight, badge, or pin in the review list.
 - **Auto-expand** — independently controls the review, personal, and recently closed sections.
 - **Sections** — enables or disables the Blocked, Approved, and WIP tiers and row dimming.
+- **Copy to prompt** — a small 📋 icon button (tooltip "Copy to prompt") on pull request pages copies text built from a template you set in
+  the options (default `szymreview {url}`). Placeholders: `{url}` `{branch}` `{target}` `{repo}` `{project}` `{id}` `{title}`.
 - **Diff view** — the pull request header floats as a compact card in the bottom-right corner
   (toggleable, on the Diff tab only or on every PR tab), giving the diff more vertical space. A small "1️⃣2️⃣3️⃣4️⃣" keycap hint on a pull request's Overview/Diff/Commits/Builds
   tabs points out Bitbucket's native `1`–`4` tab-switch shortcut. Image diffs (e.g. snapshots) are fitted to the screen, with a hover-to-expand

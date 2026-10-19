@@ -293,3 +293,19 @@ test("empty state stays visible even when every tier below it is collapsed", (t)
   assert.equal(empty().classList.contains("wip-sorter-row-hidden"), false, "not hidden just because tiers are collapsed");
 });
 
+
+test("copy-to-prompt button fills the template from the PR page", async (t) => {
+  const html = '<header class="pull-request-header"><span class="branch-from-to"><span class="ref-lozenge"><span class="ref-lozenge-content"><span>feature/X-1</span></span></span><span class="ref-lozenge"><span class="ref-lozenge-content"><span>develop</span></span></span></span><h2>X-1: Do it</h2></header>';
+  const app = page(t, html, { copyPrTemplate: "review {repo} {branch}->{target} {url} {id} {nope}" }, "/projects/APP/repos/demo/pull-requests/12/diff");
+  let copied;
+  Object.defineProperty(app.window.navigator, "clipboard", { value: { writeText: async (v) => (copied = v) }, configurable: true });
+  app.diff.refresh();
+  const btn = app.document.querySelector(".wip-sorter-copy-pr");
+  assert.ok(btn);
+  btn.click();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(copied, "review demo feature/X-1->develop https://stash.example.com/projects/APP/repos/demo/pull-requests/12 12 {nope}");
+  app.settings.copyPrButton = false;
+  app.diff.refresh();
+  assert.ok(!app.document.querySelector(".wip-sorter-copy-pr"));
+});

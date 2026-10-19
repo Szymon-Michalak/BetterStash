@@ -213,11 +213,75 @@ BetterStash.createDiff = function (settings) {
     document.documentElement.classList.remove("wip-sorter-panning");
   });
 
+  // "Copy to prompt": copies a user-defined template filled with this PR's details.
+  const PR_URL_PATH = /^(.*?\/(?:projects|users)\/([^/]+)\/repos\/([^/]+)\/pull-requests\/(\d+))/;
+
+  function prDetails() {
+    const match = PR_URL_PATH.exec(location.pathname);
+    if (!match) return null;
+    const lozenges = [...document.querySelectorAll("header.pull-request-header .branch-from-to .ref-lozenge-content")]
+      .map((el) => el.textContent.trim());
+    return {
+      url: location.origin + match[1],
+      project: match[2],
+      repo: match[3],
+      id: match[4],
+      branch: lozenges[0] || "",
+      target: lozenges[1] || "",
+      title: (document.querySelector("header.pull-request-header h2")?.textContent || "").trim(),
+    };
+  }
+
+  function fillTemplate(template, details) {
+    return template.replace(/\{(\w+)\}/g, (whole, key) => (key in details ? details[key] : whole));
+  }
+
+  async function copyText(value) {
+    try {
+      await navigator.clipboard.writeText(value);
+    } catch {
+      const area = document.createElement("textarea");
+      area.className = "wip-sorter-copy-scratch";
+      area.value = value;
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand("copy");
+      area.remove();
+    }
+  }
+
+  const COPY_TIP = "Copy to prompt";
+
+  function ensureCopyButton() {
+    let btn = document.querySelector(".wip-sorter-copy-pr");
+    const wanted = settings.copyPrButton && PR_PATH.test(location.pathname);
+    if (!wanted) return btn?.remove();
+    if (!btn) {
+      btn = BetterStash.button("wip-sorter-copy-pr", "📋", COPY_TIP, async () => {
+        const details = prDetails();
+        if (!details) return;
+        await copyText(fillTemplate(settings.copyPrTemplate || "{url}", details));
+        btn.textContent = "✓";
+        btn.dataset.tooltip = "Copied!";
+        clearTimeout(btn.resetTimer);
+        btn.resetTimer = setTimeout(() => {
+          btn.textContent = "📋";
+          btn.dataset.tooltip = COPY_TIP;
+        }, 1500);
+      });
+      document.body.appendChild(btn);
+    }
+    const card = document.querySelector("header.pull-request-header");
+    const height = document.documentElement.classList.contains("wip-sorter-prbar") && card ? card.getBoundingClientRect().height : 0;
+    document.documentElement.style.setProperty("--wip-sorter-card-h", `${Math.round(height)}px`);
+  }
+
   function refresh() {
     markActiveMode();
     ensureZoomControl();
     refreshPrBar();
     refreshImageFit();
+    ensureCopyButton();
   }
 
   window.addEventListener("resize", refresh);
@@ -230,5 +294,5 @@ BetterStash.createDiff = function (settings) {
     if (event.target instanceof HTMLImageElement && event.target.closest(".diff-image")) refresh();
   }, true);
 
-  return { refresh, annotateTabShortcuts };
+  return { refresh, annotateTabShortcuts, prDetails, fillTemplate };
 };

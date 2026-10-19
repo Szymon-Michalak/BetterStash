@@ -122,6 +122,7 @@ async function disconnectSite() {
 FORM_KEYS.forEach((key) => $(key).addEventListener("change", saveSettings));
 $("identity").addEventListener("input", saveSettings);
 $("team").addEventListener("input", saveSettings);
+$("copyPrTemplate").addEventListener("input", saveSettings);
 $("connectSite").addEventListener("click", connectSite);
 $("disconnectSite").addEventListener("click", disconnectSite);
 load();
