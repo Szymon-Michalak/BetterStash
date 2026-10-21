@@ -549,6 +549,19 @@ html.wip-sorter-prbar header.pull-request-header .merge-button:disabled {
   color: rgba(255, 255, 255, 0.5);
 }
 
+/* Active merge button: solid green so it stands out from disabled state. */
+html.wip-sorter-prbar header.pull-request-header .merge-button:not(:disabled):not([aria-disabled="true"]) {
+  background: #36b37e !important;
+  color: #fff !important;
+  font-weight: 700;
+  box-shadow: 0 0 0 2px rgba(87, 217, 163, 0.45);
+}
+
+html.wip-sorter-prbar header.pull-request-header .merge-button:not(:disabled):not([aria-disabled="true"]):hover {
+  background: #57d9a3 !important;
+  color: #172b4d !important;
+}
+
 /* Replaces Bitbucket's inline "100vh - header" height; the variable is measured in diff.js. */
 html.wip-sorter-prbar-diff .pull-request-tabs .tabs-pane.active-pane > div {
   height: calc(100vh - var(--wip-sorter-pane-top, 150px)) !important;
